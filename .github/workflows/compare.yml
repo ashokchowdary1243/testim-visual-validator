@@ -1,0 +1,24 @@
+name: Visual Compare
+
+on:
+  workflow_dispatch:
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm install pixelmatch pngjs
+
+      - run: node scripts/compare.js
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result
+          path: results/result.json
