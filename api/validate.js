@@ -1,10 +1,9 @@
 // api/validate.js
+import { Octokit } from '@octokit/rest';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import fs from 'fs';
-import path from 'path';
 
-// Body size limit config - ఇది important
+// Body size limit config
 export const config = {
   api: {
     bodyParser: {
@@ -14,7 +13,7 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // CORS headers - Testim నుండి requests రావడానికి
+  // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -23,13 +22,11 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // OPTIONS request handle చేయి (CORS preflight)
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // Only POST requests allow చేయి
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -41,23 +38,46 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing image or testName' });
     }
 
-    // Base image path
-    const baseImagePath = path.join(process.cwd(), 'base-images', `${testName}.png`);
-    
-    // Check if base image exists
-    if (!fs.existsSync(baseImagePath)) {
-      return res.status(404).json({ 
-        pass: false, 
-        error: 'Base image not found. Please run with IS_FIRST_RUN=true first.' 
-      });
+    // GitHub token
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+      return res.status(500).json({ error: 'GITHUB_TOKEN not configured' });
     }
 
-    // Convert base64 to buffer
-    const base64Data = image.replace(/^data:image\/png;base64,/, '');
-    const currentBuffer = Buffer.from(base64Data, 'base64');
+    const octokit = new Octokit({ auth: githubToken });
     
-    // Read base image
-    const baseBuffer = fs.readFileSync(baseImagePath);
+    // GitHub repo details
+    const owner = 'ashokchowdary1243'; // నీ GitHub username
+    const repo = 'testim-visual-validator-new'; // నీ repo name
+    const branch = 'main';
+    const path = `base-images/${testName}.png`;
+
+    // GitHub నుండి base image తీసుకో
+    let baseImageBase64;
+    try {
+      const response = await octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+        ref: branch,
+      });
+      baseImageBase64 = response.data.content;
+    } catch (error) {
+      if (error.status === 404) {
+        return res.status(404).json({ 
+          pass: false, 
+          error: 'Base image not found. Please run with IS_FIRST_RUN=true first.' 
+        });
+      }
+      throw error;
+    }
+
+    // Remove base64 prefix if present
+    const currentBase64 = image.replace(/^data:image\/png;base64,/, '');
+    
+    // Convert to buffers
+    const baseBuffer = Buffer.from(baseImageBase64, 'base64');
+    const currentBuffer = Buffer.from(currentBase64, 'base64');
     
     // Load images as PNG
     const basePng = PNG.sync.read(baseBuffer);
@@ -65,9 +85,7 @@ export default async function handler(req, res) {
 
     // Resize if dimensions don't match
     if (basePng.width !== currentPng.width || basePng.height !== currentPng.height) {
-      // Resize current image to match base image dimensions
       const resized = new PNG({ width: basePng.width, height: basePng.height });
-      // Simple resize - you might want to use a better algorithm
       const scaleX = currentPng.width / basePng.width;
       const scaleY = currentPng.height / basePng.height;
       
@@ -88,7 +106,7 @@ export default async function handler(req, res) {
       currentPng.height = basePng.height;
     }
 
-    // Compare images using pixelmatch
+    // Compare images
     const diff = new PNG({ width: basePng.width, height: basePng.height });
     const numDiffPixels = pixelmatch(
       basePng.data,
@@ -102,16 +120,6 @@ export default async function handler(req, res) {
     const totalPixels = basePng.width * basePng.height;
     const diffPercentage = (numDiffPixels / totalPixels) * 100;
     const pass = diffPercentage <= threshold;
-
-    // Save diff image for debugging (optional)
-    if (!pass) {
-      const diffPath = path.join(process.cwd(), 'diffs', `${testName}-${Date.now()}.png`);
-      const diffDir = path.dirname(diffPath);
-      if (!fs.existsSync(diffDir)) {
-        fs.mkdirSync(diffDir, { recursive: true });
-      }
-      fs.writeFileSync(diffPath, PNG.sync.write(diff));
-    }
 
     return res.status(200).json({
       pass,
