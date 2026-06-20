@@ -2,7 +2,7 @@ const { Octokit } = require("@octokit/rest");
 const pixelmatch = require("pixelmatch");
 const { PNG } = require("pngjs");
 
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
@@ -12,7 +12,6 @@ module.exports = async (req, res) => {
   try {
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-    // Base image GitHub nundi fetch cheyyi
     const baseFile = await octokit.repos.getContent({
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO,
@@ -21,7 +20,6 @@ module.exports = async (req, res) => {
 
     const baseBuffer = Buffer.from(baseFile.data.content, "base64");
 
-    // PNG parse cheyyi — pixelmatch kosam
     const basePng = PNG.sync.read(baseBuffer);
     const currentPng = PNG.sync.read(Buffer.from(image, "base64"));
 
@@ -66,3 +64,14 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Body size limit 10mb — Vercel config
+handler.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
+module.exports = handler;
