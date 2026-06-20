@@ -1,100 +1,67 @@
-// api/validate.js
-import { Octokit } from '@octokit/rest';
-import pixelmatch from 'pixelmatch';
-import { PNG } from 'pngjs';
+const { Octokit } = require("@octokit/rest");
+const pixelmatch = require("pixelmatch");
+const { PNG } = require("pngjs");
 
-// Body size limit config
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
-
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+const handler = async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const { image, testName, threshold = 0.1 } = req.body;
 
   try {
-    const { image, testName, threshold = 0.1 } = req.body;
-
-    if (!image || !testName) {
-      return res.status(400).json({ error: 'Missing image or testName' });
+    // Token check
+    if (!process.env.GITHUB_TOKEN) {
+      return res.status(500).json({ error: "GITHUB_TOKEN not configured" });
     }
 
-    // GitHub token
-    const githubToken = process.env.GITHUB_TOKEN;
-    if (!githubToken) {
-      return res.status(500).json({ error: 'GITHUB_TOKEN not configured' });
-    }
-
-    const octokit = new Octokit({ auth: githubToken });
-    
-    // GitHub repo details
-    const owner = 'ashokchowdary1243'; // నీ GitHub username
-    const repo = 'testim-visual-validator-new'; // నీ repo name
-    const branch = 'main';
-    const path = `base-images/${testName}.png`;
+    const octokit = new Octokit({ 
+      auth: process.env.GITHUB_TOKEN 
+    });
 
     // GitHub నుండి base image తీసుకో
-    let baseImageBase64;
-    try {
-      const response = await octokit.repos.getContent({
-        owner,
-        repo,
-        path,
-        ref: branch,
-      });
-      baseImageBase64 = response.data.content;
-    } catch (error) {
-      if (error.status === 404) {
-        return res.status(404).json({ 
-          pass: false, 
-          error: 'Base image not found. Please run with IS_FIRST_RUN=true first.' 
-        });
-      }
-      throw error;
-    }
+    console.log('Fetching base image for:', testName);
+    console.log('Owner:', process.env.GITHUB_OWNER);
+    console.log('Repo:', process.env.GITHUB_REPO);
 
-    // Remove base64 prefix if present
+    const baseFile = await octokit.repos.getContent({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      path: `base-images/${testName}.png`,
+    });
+
+    console.log('Base image fetched successfully');
+
+    // Remove prefix if present
     const currentBase64 = image.replace(/^data:image\/png;base64,/, '');
     
-    // Convert to buffers
-    const baseBuffer = Buffer.from(baseImageBase64, 'base64');
-    const currentBuffer = Buffer.from(currentBase64, 'base64');
-    
-    // Load images as PNG
+    const baseBuffer = Buffer.from(baseFile.data.content, "base64");
+    const currentBuffer = Buffer.from(currentBase64, "base64");
+
+    console.log('Base image size:', baseBuffer.length);
+    console.log('Current image size:', currentBuffer.length);
+
     const basePng = PNG.sync.read(baseBuffer);
     const currentPng = PNG.sync.read(currentBuffer);
 
-    // Resize if dimensions don't match
-    if (basePng.width !== currentPng.width || basePng.height !== currentPng.height) {
-      const resized = new PNG({ width: basePng.width, height: basePng.height });
-      const scaleX = currentPng.width / basePng.width;
-      const scaleY = currentPng.height / basePng.height;
+    console.log(`Base: ${basePng.width}x${basePng.height}`);
+    console.log(`Current: ${currentPng.width}x${currentPng.height}`);
+
+    const width = basePng.width;
+    const height = basePng.height;
+
+    if (currentPng.width !== width || currentPng.height !== height) {
+      // Resize current image to match base
+      const resized = new PNG({ width, height });
+      const scaleX = currentPng.width / width;
+      const scaleY = currentPng.height / height;
       
-      for (let y = 0; y < basePng.height; y++) {
-        for (let x = 0; x < basePng.width; x++) {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
           const srcX = Math.min(Math.floor(x * scaleX), currentPng.width - 1);
           const srcY = Math.min(Math.floor(y * scaleY), currentPng.height - 1);
           const srcIdx = (srcY * currentPng.width + srcX) * 4;
-          const dstIdx = (y * basePng.width + x) * 4;
+          const dstIdx = (y * width + x) * 4;
           resized.data[dstIdx] = currentPng.data[srcIdx];
           resized.data[dstIdx + 1] = currentPng.data[srcIdx + 1];
           resized.data[dstIdx + 2] = currentPng.data[srcIdx + 2];
@@ -102,38 +69,64 @@ export default async function handler(req, res) {
         }
       }
       currentPng.data = resized.data;
-      currentPng.width = basePng.width;
-      currentPng.height = basePng.height;
+      currentPng.width = width;
+      currentPng.height = height;
     }
 
-    // Compare images
-    const diff = new PNG({ width: basePng.width, height: basePng.height });
-    const numDiffPixels = pixelmatch(
+    const diff = new PNG({ width, height });
+
+    const mismatchedPixels = pixelmatch(
       basePng.data,
       currentPng.data,
       diff.data,
-      basePng.width,
-      basePng.height,
+      width,
+      height,
       { threshold: 0.1 }
     );
 
-    const totalPixels = basePng.width * basePng.height;
-    const diffPercentage = (numDiffPixels / totalPixels) * 100;
+    const totalPixels = width * height;
+    const diffPercentage = ((mismatchedPixels / totalPixels) * 100);
     const pass = diffPercentage <= threshold;
 
-    return res.status(200).json({
+    console.log(`Diff: ${mismatchedPixels} pixels (${diffPercentage.toFixed(2)}%)`);
+
+    res.json({
       pass,
       diffPercentage: Math.round(diffPercentage * 100) / 100,
-      message: pass ? 'Images match!' : `Images differ by ${diffPercentage}%`,
+      mismatchedPixels,
       totalPixels,
-      diffPixels: numDiffPixels
+      message: pass
+        ? `PASS - Images match (${diffPercentage.toFixed(2)}% diff)`
+        : `FAIL - ${diffPercentage.toFixed(2)}% difference detected!`,
     });
 
-  } catch (error) {
-    console.error('Validation error:', error);
-    return res.status(500).json({ 
-      pass: false, 
-      error: error.message 
+  } catch (err) {
+    console.log("Error:", err.message);
+    console.log("Error status:", err.status);
+    console.log("Error details:", err.response?.data);
+    
+    let errorMessage = err.message;
+    if (err.status === 404) {
+      errorMessage = "Base image not found in GitHub. Please run with IS_FIRST_RUN=true first.";
+    } else if (err.status === 401) {
+      errorMessage = "Invalid GITHUB_TOKEN. Please check token permissions.";
+    }
+    
+    res.status(500).json({ 
+      pass: false,
+      error: errorMessage,
+      details: err.message 
     });
   }
-}
+};
+
+// Body size limit 10mb
+handler.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
+module.exports = handler;

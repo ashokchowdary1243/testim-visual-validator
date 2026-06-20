@@ -1,100 +1,96 @@
-// api/save-base.js
-import { Octokit } from '@octokit/rest';
+const { Octokit } = require("@octokit/rest");
 
-// Body size limit config
-export const config = {
+module.exports = async (req, res) => {
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Only POST allowed" });
+    }
+
+    const { image, testName } = req.body;
+    
+    console.log('testName:', testName);
+    console.log('image length:', image?.length);
+    console.log('GITHUB_OWNER:', process.env.GITHUB_OWNER);
+    console.log('GITHUB_REPO:', process.env.GITHUB_REPO);
+
+    // Token check
+    if (!process.env.GITHUB_TOKEN) {
+      return res.status(500).json({ error: "GITHUB_TOKEN not configured" });
+    }
+
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_TOKEN,
+    });
+
+    // Remove data:image/png;base64, prefix if present
+    const base64Content = image.replace(/^data:image\/png;base64,/, '');
+    
+    console.log('Base64 content length:', base64Content.length);
+
+    // Get existing file SHA if it exists
+    let sha;
+    try {
+      const existing = await octokit.repos.getContent({
+        owner: process.env.GITHUB_OWNER,
+        repo: process.env.GITHUB_REPO,
+        path: `base-images/${testName}.png`,
+      });
+      sha = existing.data.sha;
+      console.log('Existing file found, SHA:', sha);
+    } catch (e) {
+      console.log('No existing file — creating new');
+      if (e.status !== 404) {
+        console.log('Error checking existing file:', e.message);
+      }
+    }
+
+    // Upload to GitHub - content should be base64 encoded string
+    const response = await octokit.repos.createOrUpdateFileContents({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      path: `base-images/${testName}.png`,
+      message: `Save base image ${testName}`,
+      content: base64Content,  // Direct base64 string
+      sha: sha,
+    });
+
+    console.log('File saved successfully!');
+    console.log('File SHA:', response.data.content.sha);
+
+    res.status(200).json({
+      success: true,
+      message: "Base image saved",
+      sha: response.data.content.sha,
+    });
+
+  } catch (err) {
+    console.log('Full error:', err.message);
+    console.log('Error status:', err.status);
+    console.log('Error details:', err.response?.data);
+    
+    // Better error message
+    let errorMessage = err.message;
+    if (err.status === 404) {
+      errorMessage = "Repository not found. Check GITHUB_OWNER and GITHUB_REPO";
+    } else if (err.status === 401) {
+      errorMessage = "Invalid GITHUB_TOKEN. Please check token permissions.";
+    } else if (err.status === 403) {
+      errorMessage = "Insufficient permissions. Token needs 'repo' scope.";
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: errorMessage,
+      details: err.message
+    });
+  }
+};
+
+// Body size limit
+module.exports.config = {
   api: {
     bodyParser: {
       sizeLimit: '10mb',
     },
   },
 };
-
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const { image, testName } = req.body;
-
-    if (!image || !testName) {
-      return res.status(400).json({ error: 'Missing image or testName' });
-    }
-
-    // GitHub token - Vercel environment variables నుండి తీసుకో
-    const githubToken = process.env.GITHUB_TOKEN;
-    if (!githubToken) {
-      return res.status(500).json({ error: 'GITHUB_TOKEN not configured' });
-    }
-
-    const octokit = new Octokit({ auth: githubToken });
-    
-    // GitHub repo details - ఇవి నీ దగ్గరకు మార్చు
-    const owner = 'ashokchowdary1243'; // నీ GitHub username
-    const repo = 'testim-visual-validator-new'; // నీ repo name
-    const branch = 'main';
-    const path = `base-images/${testName}.png`;
-
-    // Remove base64 prefix if present
-    const base64Data = image.replace(/^data:image\/png;base64,/, '');
-    
-    // Get existing file SHA if it exists (for update)
-    let sha = null;
-    try {
-      const existingFile = await octokit.repos.getContent({
-        owner,
-        repo,
-        path,
-        ref: branch,
-      });
-      sha = existingFile.data.sha;
-    } catch (error) {
-      // File doesn't exist, new file create చేయాలి
-      if (error.status !== 404) {
-        throw error;
-      }
-    }
-
-    // Upload to GitHub
-    const response = await octokit.repos.createOrUpdateFileContents({
-      owner,
-      repo,
-      path,
-      message: sha ? `Update base image for ${testName}` : `Add base image for ${testName}`,
-      content: base64Data,
-      branch,
-      sha: sha || undefined,
-    });
-
-    console.log(`Base image saved to GitHub: ${path}`);
-
-    return res.status(200).json({
-      success: true,
-      message: `Base image saved to GitHub for test: ${testName}`,
-      path: path,
-      sha: response.data.content.sha,
-    });
-
-  } catch (error) {
-    console.error('Save error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-}
