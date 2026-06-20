@@ -1,75 +1,94 @@
 const { Octokit } = require("@octokit/rest");
+const pixelmatch = require("pixelmatch");
+const { PNG } = require("pngjs");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  const { image, testName } = req.body;
+  const { image, testName, threshold = 0.1 } = req.body;
 
   try {
-    const octokit = new Octokit({
-      auth: process.env.GITHUB_TOKEN,
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+    // Base image GitHub nundi fetch cheyyi
+    const baseFile = await octokit.repos.getContent({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      path: `base-images/${testName}.png`,
     });
 
-    // current-images lo existing file SHA fetch cheyyi
-    let sha;
+    const baseBuffer = Buffer.from(baseFile.data.content, "base64");
+
+    // Current image SHA fetch (update kosam)
+    let currentSha;
     try {
       const existing = await octokit.repos.getContent({
         owner: process.env.GITHUB_OWNER,
         repo: process.env.GITHUB_REPO,
         path: `current-images/${testName}.png`,
       });
-      sha = existing.data.sha;
-      console.log('Existing current-image found, sha:', sha);
+      currentSha = existing.data.sha;
     } catch (e) {
-      console.log('No existing current-image — creating new');
+      console.log("No existing current image");
     }
 
-    // Screenshot save cheyyi (sha tho)
+    // Current image GitHub lo save cheyyi
     await octokit.repos.createOrUpdateFileContents({
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO,
       path: `current-images/${testName}.png`,
-      message: "update screenshot",
+      message: "update current screenshot",
       content: image,
-      ...(sha && { sha }), // sha unte pass cheyyi, lekapothe skip
+      ...(currentSha && { sha: currentSha }),
     });
 
-    console.log('Current image saved successfully');
+    // PNG parse cheyyi — pixelmatch kosam
+    const basePng = PNG.sync.read(baseBuffer);
+    const currentPng = PNG.sync.read(Buffer.from(image, "base64"));
 
-    // GitHub Action trigger cheyyi
-    const dispatchRes = await fetch(
-      `https://api.github.com/repos/${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}/actions/workflows/compare.yml/dispatches`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ref: "main" }),
-      }
-    );
+    // Size match cheyyi
+    const width = basePng.width;
+    const height = basePng.height;
 
-    if (!dispatchRes.ok) {
-      const errText = await dispatchRes.text();
-      console.log('Dispatch failed:', dispatchRes.status, errText);
-      return res.status(500).json({ error: `Workflow dispatch failed: ${errText}` });
+    // Resize ledu pixelmatch lo — same size undali
+    // Current image different size unte warn cheyyi
+    if (currentPng.width !== width || currentPng.height !== height) {
+      return res.status(400).json({
+        error: `Size mismatch! Base: ${width}x${height}, Current: ${currentPng.width}x${currentPng.height}`,
+      });
     }
 
-    console.log('GitHub Action triggered successfully');
+    const diff = new PNG({ width, height });
+
+    const mismatchedPixels = pixelmatch(
+      basePng.data,
+      currentPng.data,
+      diff.data,
+      width,
+      height,
+      { threshold: 0.1 }
+    );
+
+    const totalPixels = width * height;
+    const diffPercentage = ((mismatchedPixels / totalPixels) * 100).toFixed(2);
+    const pass = parseFloat(diffPercentage) <= threshold;
+
+    console.log(`Diff: ${mismatchedPixels} pixels (${diffPercentage}%)`);
 
     res.json({
-      success: true,
-      message: "Validation triggered",
+      pass,
+      diffPercentage: parseFloat(diffPercentage),
+      mismatchedPixels,
+      totalPixels,
+      message: pass
+        ? `PASS - Images match (${diffPercentage}% diff)`
+        : `FAIL - ${diffPercentage}% difference detected!`,
     });
 
   } catch (err) {
-    console.log('Full error:', err.message);
-    res.status(500).json({
-      error: err.message,
-      stack: err.stack,
-    });
+    console.log("Error:", err.message);
+    res.status(500).json({ error: err.message });
   }
 };
