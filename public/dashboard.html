@@ -1256,19 +1256,21 @@ async function generatePDF(reports) {
         sx += 48;
       });
 
-      // Images — use DOM img elements (already loaded, no CORS issue)
+      // Images
       const imgY = 42;
       const cols = isFail ? 3 : 2;
       const imgW = (W - M * 2 - (cols-1)*4) / cols;
 
-      const imgSources = [
-        { label: 'BASE IMAGE',         domId: 'img-base' },
-        { label: 'CURRENT SCREENSHOT', domId: 'img-current' },
-        ...(isFail ? [{ label: 'DIFF (MISMATCHED)', domId: 'img-diff' }] : [])
+      const imgs = [
+        // Base image — already cropped when saved, no need to crop again
+        { label: 'BASE IMAGE', path: base + r.baseImagePath, crop: null },
+        // Current image — also already cropped when saved, no need to crop again
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, crop: null },
+        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, crop: null }] : [])
       ];
 
-      for (let j = 0; j < imgSources.length; j++) {
-        const { label, domId } = imgSources[j];
+      for (let j = 0; j < imgs.length; j++) {
+        const { label, path, crop } = imgs[j];
         const xp = M + j * (imgW + 4);
         const cardH = H - imgY - M;
 
@@ -1279,15 +1281,9 @@ async function generatePDF(reports) {
         pdf.text(label, xp + 3, imgY + 6);
 
         try {
-          // Use already-loaded DOM image — no CORS, no re-fetch
-          const domImg = document.querySelector(`#${domId} img`);
-          let imgData;
-          if (domImg && domImg.complete && domImg.naturalWidth > 0) {
-            imgData = domImgToB64(domImg);
-          } else {
-            // Fallback: crossOrigin fetch
-            imgData = await fetchB64WithCors(base + (domId === 'img-base' ? r.baseImagePath : domId === 'img-current' ? r.currentImagePath : r.diffImagePath));
-          }
+          const rawB64 = await fetchB64(path);
+          // If cropRegion exists, crop using canvas before adding to PDF
+          const imgData = crop ? await cropImageB64(rawB64, crop) : rawB64;
           pdf.addImage(imgData, 'PNG', xp + 2, imgY + 10, imgW - 4, cardH - 14, '', 'FAST');
         } catch (e) {
           pdf.setTextColor(239,68,68); pdf.setFontSize(7);
@@ -1309,29 +1305,20 @@ async function generatePDF(reports) {
   }
 }
 
-// Draw DOM <img> to canvas → base64 (no CORS needed, already loaded)
-function domImgToB64(img) {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  canvas.getContext('2d').drawImage(img, 0, 0);
-  return canvas.toDataURL('image/png');
-}
-
-// Fallback: load image with crossOrigin → canvas → base64
-function fetchB64WithCors(url) {
+// Crop a base64 image using canvas — returns cropped base64
+async function cropImageB64(b64, crop) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.width = crop.width;
+      canvas.height = crop.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
       resolve(canvas.toDataURL('image/png'));
     };
     img.onerror = reject;
-    img.src = url + '?t=' + Date.now();
+    img.src = b64;
   });
 }
 
