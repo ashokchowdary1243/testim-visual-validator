@@ -67,45 +67,23 @@ module.exports = async (req, res) => {
     const currentPng = PNG.sync.read(currentPngBuffer);
     const currentPngBase64 = currentPngBuffer.toString("base64");
 
-    // 5+8. Save current image AND load existing reports — parallel
-    const reportsPath = `reports/${projectName}/${testName}/reports.json`;
+    // 5. Save current image
+    let currentSha;
+    try {
+      const existing = await octokit.repos.getContent({
+        owner: OWNER, repo: REPO,
+        path: `current-images/${projectName}/${testName}.png`,
+      });
+      currentSha = existing.data.sha;
+    } catch (e) {}
 
-    const [, reportsResult] = await Promise.all([
-      // Save current image (no need to fetch SHA first — always new write or overwrite)
-      (async () => {
-        let currentSha;
-        try {
-          const existing = await octokit.repos.getContent({
-            owner: OWNER, repo: REPO,
-            path: `current-images/${projectName}/${testName}.png`,
-          });
-          currentSha = existing.data.sha;
-        } catch (e) {}
-        await octokit.repos.createOrUpdateFileContents({
-          owner: OWNER, repo: REPO,
-          path: `current-images/${projectName}/${testName}.png`,
-          message: `Update current: ${projectName}/${testName}`,
-          content: currentPngBase64,
-          ...(currentSha && { sha: currentSha }),
-        });
-      })(),
-
-      // Load existing reports
-      (async () => {
-        try {
-          const existingReports = await octokit.repos.getContent({
-            owner: OWNER, repo: REPO, path: reportsPath,
-          });
-          const decoded = Buffer.from(existingReports.data.content.replace(/\s/g, ""), "base64").toString("utf8");
-          return { reports: JSON.parse(decoded), sha: existingReports.data.sha };
-        } catch (e) {
-          return { reports: [], sha: null };
-        }
-      })()
-    ]);
-
-    let reports = reportsResult.reports;
-    let reportsSha = reportsResult.sha;
+    await octokit.repos.createOrUpdateFileContents({
+      owner: OWNER, repo: REPO,
+      path: `current-images/${projectName}/${testName}.png`,
+      message: `Update current: ${projectName}/${testName}`,
+      content: currentPngBase64,
+      ...(currentSha && { sha: currentSha }),
+    });
 
     // 6. Pixel compare
     const diff = new PNG({ width, height });
@@ -122,16 +100,37 @@ module.exports = async (req, res) => {
     let diffImagePath = null;
     if (!pass) {
       diffImagePath = `diff-images/${projectName}/${testName}/${reportId}.png`;
-      // New unique path per report — no SHA fetch needed
+      let diffSha;
+      try {
+        const existingDiff = await octokit.repos.getContent({
+          owner: OWNER, repo: REPO, path: diffImagePath,
+        });
+        diffSha = existingDiff.data.sha;
+      } catch (e) {}
+
       await octokit.repos.createOrUpdateFileContents({
         owner: OWNER, repo: REPO,
         path: diffImagePath,
         message: `Diff: ${projectName}/${testName}/${reportId}`,
         content: PNG.sync.write(diff).toString("base64"),
+        ...(diffSha && { sha: diffSha }),
       });
     }
 
-    // 8 already done above in parallel — reports + reportsSha ready
+    // 8. Load existing reports
+    const reportsPath = `reports/${projectName}/${testName}/reports.json`;
+    let reports = [];
+    let reportsSha;
+    try {
+      const existingReports = await octokit.repos.getContent({
+        owner: OWNER, repo: REPO, path: reportsPath,
+      });
+      reportsSha = existingReports.data.sha;
+      const decoded = Buffer.from(existingReports.data.content.replace(/\s/g, ""), "base64").toString("utf8");
+      reports = JSON.parse(decoded);
+    } catch (e) {
+      reports = [];
+    }
 
     // 9. Save report
     const report = {
@@ -154,47 +153,43 @@ module.exports = async (req, res) => {
 
     reports.unshift(report);
 
-    // 9+10. Save report AND update projects.json — parallel
+    await octokit.repos.createOrUpdateFileContents({
+      owner: OWNER, repo: REPO,
+      path: reportsPath,
+      message: `Report: ${projectName}/${testName}/${reportId}`,
+      content: Buffer.from(JSON.stringify(reports, null, 2)).toString("base64"),
+      ...(reportsSha && { sha: reportsSha }),
+    });
+
+    // 10. Update projects.json
     const projectsPath = "reports/projects.json";
-    await Promise.all([
-      // Save report
-      octokit.repos.createOrUpdateFileContents({
-        owner: OWNER, repo: REPO,
-        path: reportsPath,
-        message: `Report: ${projectName}/${testName}/${reportId}`,
-        content: Buffer.from(JSON.stringify(reports, null, 2)).toString("base64"),
-        ...(reportsSha && { sha: reportsSha }),
-      }),
+    let projects = [];
+    let projectsSha;
+    try {
+      const existingProjects = await octokit.repos.getContent({
+        owner: OWNER, repo: REPO, path: projectsPath,
+      });
+      projectsSha = existingProjects.data.sha;
+      const decoded = Buffer.from(existingProjects.data.content.replace(/\s/g, ""), "base64").toString("utf8");
+      projects = JSON.parse(decoded);
+    } catch (e) {
+      projects = [];
+    }
 
-      // Update projects.json
-      (async () => {
-        let projects = [];
-        let projectsSha;
-        try {
-          const existingProjects = await octokit.repos.getContent({
-            owner: OWNER, repo: REPO, path: projectsPath,
-          });
-          projectsSha = existingProjects.data.sha;
-          const decoded = Buffer.from(existingProjects.data.content.replace(/\s/g, ""), "base64").toString("utf8");
-          projects = JSON.parse(decoded);
-        } catch (e) { projects = []; }
+    let project = projects.find(p => p.name === projectName);
+    if (!project) {
+      projects.push({ name: projectName, testNames: [testName] });
+    } else if (!project.testNames.includes(testName)) {
+      project.testNames.push(testName);
+    }
 
-        let project = projects.find(p => p.name === projectName);
-        if (!project) {
-          projects.push({ name: projectName, testNames: [testName] });
-        } else if (!project.testNames.includes(testName)) {
-          project.testNames.push(testName);
-        }
-
-        await octokit.repos.createOrUpdateFileContents({
-          owner: OWNER, repo: REPO,
-          path: projectsPath,
-          message: `Update projects: ${projectName}/${testName}`,
-          content: Buffer.from(JSON.stringify(projects, null, 2)).toString("base64"),
-          ...(projectsSha && { sha: projectsSha }),
-        });
-      })()
-    ]);
+    await octokit.repos.createOrUpdateFileContents({
+      owner: OWNER, repo: REPO,
+      path: projectsPath,
+      message: `Update projects: ${projectName}/${testName}`,
+      content: Buffer.from(JSON.stringify(projects, null, 2)).toString("base64"),
+      ...(projectsSha && { sha: projectsSha }),
+    });
 
     return res.status(200).json({
       pass,
