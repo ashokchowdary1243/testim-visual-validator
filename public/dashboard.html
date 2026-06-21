@@ -246,6 +246,46 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
 /* KBD HINT */
 .kbd-hint { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
 .kbd-hint kbd { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: inherit; font-size: 10px; }
+
+/* CLEANUP MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1050;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px);
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  width: 560px; max-width: 92vw; max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-head {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.modal-head h3 { font-size: 14px; font-weight: 700; flex: 1; }
+.modal-close { cursor: pointer; color: var(--muted); font-size: 16px; background: none; border: none; }
+.modal-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+.modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+
+.cleanup-summary {
+  display: flex; gap: 10px; margin-bottom: 12px;
+}
+.cleanup-stat {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; text-align: center;
+}
+.cleanup-stat .v { font-size: 17px; font-weight: 700; }
+.cleanup-stat .l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+.orphan-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 4px;
+  border-bottom: 1px solid var(--border); font-size: 11px;
+}
+.orphan-row .op { flex: 1; word-break: break-all; color: var(--text); }
+.orphan-row .os { color: var(--muted); flex-shrink: 0; font-size: 10px; }
+.orphan-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+
+.cleanup-empty { text-align: center; color: var(--muted); font-size: 12px; padding: 30px 10px; }
 </style>
 </head>
 <body>
@@ -270,6 +310,9 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
     <button class="btn btn-refresh" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Auto-refresh reports">
       <div class="dot"></div>
       Auto-refresh: Off
+    </button>
+    <button class="btn btn-ghost" onclick="openCleanupModal()" title="Find & remove orphan images">
+      🧹 Cleanup
     </button>
     <div id="connStatus" style="font-size:11px;color:var(--muted)">Not connected</div>
   </div>
@@ -351,6 +394,24 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
   <div class="zoom-hint">Click anywhere or press Esc to close</div>
 </div>
 
+<!-- CLEANUP MODAL -->
+<div class="modal-overlay" id="cleanupModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🧹 Storage Cleanup</h3>
+      <button class="modal-close" onclick="closeCleanupModal()">✕</button>
+    </div>
+    <div class="modal-body" id="cleanupBody">
+      <div class="cleanup-empty">Scanning repo for orphan images…</div>
+    </div>
+    <div class="modal-foot" id="cleanupFoot" style="display:none">
+      <span class="kbd-hint" id="cleanupSelCount">0 selected</span>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="toggleSelectAllOrphans()">Select All</button>
+      <button class="btn btn-danger" id="cleanupDeleteBtn" onclick="deleteOrphans()" disabled>Delete Selected</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="overlay" id="overlay" style="display:none">
   <div class="overlay-box">
@@ -372,6 +433,8 @@ let currentTest = '';
 let autoRefreshOn = false;
 let autoRefreshTimer = null;
 const AUTO_REFRESH_MS = 8000;
+let orphanFiles = [];
+let orphanSelected = new Set();
 
 // ─── INIT ─────────────────────────────────────────────
 window.addEventListener('load', () => {
@@ -843,9 +906,10 @@ async function silentRefresh() {
 
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────
 document.addEventListener('keydown', (e) => {
-  // Esc closes zoom overlay
+  // Esc closes zoom overlay or cleanup modal
   if (e.key === 'Escape') {
     if (document.getElementById('zoomOverlay').classList.contains('show')) closeZoom();
+    if (document.getElementById('cleanupModal').classList.contains('show')) closeCleanupModal();
     return;
   }
 
@@ -868,6 +932,132 @@ document.addEventListener('keydown', (e) => {
     deleteSingle(activeReportId);
   }
 });
+
+// ─── STORAGE CLEANUP ──────────────────────────────────
+function openCleanupModal() {
+  const api = getApiUrl();
+  if (!api) { toast('Enter API URL', '#ef4444'); return; }
+  document.getElementById('cleanupModal').classList.add('show');
+  document.getElementById('cleanupFoot').style.display = 'none';
+  document.getElementById('cleanupBody').innerHTML = '<div class="cleanup-empty"><div class="spin" style="margin:0 auto 10px"></div>Scanning repo for orphan images…</div>';
+  orphanFiles = [];
+  orphanSelected.clear();
+  scanOrphans();
+}
+
+function closeCleanupModal() {
+  document.getElementById('cleanupModal').classList.remove('show');
+}
+
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+async function scanOrphans() {
+  const api = getApiUrl();
+  try {
+    const res = await fetch(`${api}/api/cleanup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'scan' }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      document.getElementById('cleanupBody').innerHTML = `<div class="cleanup-empty">Scan failed: ${data.error}</div>`;
+      return;
+    }
+    orphanFiles = data.orphans || [];
+    renderCleanupBody(data);
+  } catch (e) {
+    document.getElementById('cleanupBody').innerHTML = `<div class="cleanup-empty">Scan failed: ${e.message}</div>`;
+  }
+}
+
+function renderCleanupBody(data) {
+  const body = document.getElementById('cleanupBody');
+  const foot = document.getElementById('cleanupFoot');
+
+  const summary = `
+    <div class="cleanup-summary">
+      <div class="cleanup-stat"><div class="v">${data.totalFiles}</div><div class="l">Total Images</div></div>
+      <div class="cleanup-stat"><div class="v" style="color:${orphanFiles.length ? 'var(--warn)' : 'var(--pass)'}">${orphanFiles.length}</div><div class="l">Orphan Files</div></div>
+      <div class="cleanup-stat"><div class="v">${fmtBytes(data.orphanSizeBytes || 0)}</div><div class="l">Reclaimable</div></div>
+    </div>`;
+
+  if (!orphanFiles.length) {
+    body.innerHTML = summary + '<div class="cleanup-empty">✨ No orphan images found — repo is clean!</div>';
+    foot.style.display = 'none';
+    return;
+  }
+
+  const rows = orphanFiles.map((f, i) => `
+    <div class="orphan-row">
+      <input type="checkbox" onclick="toggleOrphan('${f.path}')" ${orphanSelected.has(f.path) ? 'checked' : ''} />
+      <span class="op">${f.path}</span>
+      <span class="os">${fmtBytes(f.size)}</span>
+    </div>
+  `).join('');
+
+  body.innerHTML = summary + rows;
+  foot.style.display = 'flex';
+  updateCleanupSelUI();
+}
+
+function toggleOrphan(path) {
+  orphanSelected.has(path) ? orphanSelected.delete(path) : orphanSelected.add(path);
+  updateCleanupSelUI();
+}
+
+function toggleSelectAllOrphans() {
+  if (orphanSelected.size === orphanFiles.length) {
+    orphanSelected.clear();
+  } else {
+    orphanFiles.forEach(f => orphanSelected.add(f.path));
+  }
+  document.querySelectorAll('.orphan-row input[type="checkbox"]').forEach((cb, i) => {
+    cb.checked = orphanSelected.has(orphanFiles[i].path);
+  });
+  updateCleanupSelUI();
+}
+
+function updateCleanupSelUI() {
+  const count = orphanSelected.size;
+  document.getElementById('cleanupSelCount').textContent = `${count} selected`;
+  document.getElementById('cleanupDeleteBtn').disabled = !count;
+}
+
+async function deleteOrphans() {
+  if (!orphanSelected.size) return;
+  if (!confirm(`Delete ${orphanSelected.size} orphan image(s)? This cannot be undone.`)) return;
+
+  const api = getApiUrl();
+  const items = orphanFiles.filter(f => orphanSelected.has(f.path)).map(f => ({ path: f.path, sha: f.sha }));
+
+  loading(`Deleting ${items.length} orphan image(s)...`);
+  try {
+    const res = await fetch(`${api}/api/cleanup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', items }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`Deleted ${data.deleted} orphan file(s)`);
+      if (data.errors && data.errors.length) toast(`${data.errors.length} failed — see console`, '#f59e0b');
+      orphanSelected.clear();
+      orphanFiles = [];
+      scanOrphans(); // re-scan to refresh the list
+    } else {
+      toast('Cleanup failed: ' + data.error, '#ef4444');
+    }
+  } catch (e) {
+    toast('Error: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
 
 // ─── DELETE ───────────────────────────────────────────
 async function deleteSingle(id) {

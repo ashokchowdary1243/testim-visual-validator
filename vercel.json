@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/validate.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/save-base.js": {
       "maxDuration": 30
