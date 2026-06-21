@@ -1262,8 +1262,10 @@ async function generatePDF(reports) {
       const imgW = (W - M * 2 - (cols-1)*4) / cols;
 
       const imgs = [
-        { label: 'BASE IMAGE', path: base + r.baseImagePath, crop: r.cropRegion },
-        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, crop: r.cropRegion },
+        // Base image — already cropped when saved, no need to crop again
+        { label: 'BASE IMAGE', path: base + r.baseImagePath, crop: null },
+        // Current image — also already cropped when saved, no need to crop again
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, crop: null },
         ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, crop: null }] : [])
       ];
 

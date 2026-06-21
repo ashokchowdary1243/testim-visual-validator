@@ -132,21 +132,6 @@ module.exports = async (req, res) => {
       reports = [];
     }
 
-    // Duplicate check — 60 seconds
-    const sixtySecondsAgo = Date.now() - 60000;
-    const recentDuplicate = reports.find(r => new Date(r.timestamp).getTime() > sixtySecondsAgo);
-    if (recentDuplicate) {
-      console.log(`[DUPLICATE] Skipping: ${recentDuplicate.id}`);
-      return res.status(200).json({
-        pass: recentDuplicate.pass,
-        diffPercentage: recentDuplicate.diffPercentage,
-        mismatchedPixels: recentDuplicate.mismatchedPixels,
-        totalPixels: recentDuplicate.totalPixels,
-        reportId: recentDuplicate.id,
-        message: recentDuplicate.message
-      });
-    }
-
     // 9. Save report
     const report = {
       id: reportId,
