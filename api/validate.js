@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Only POST allowed" });
 
-  let { image, testName, projectName, threshold = 0.1 } = req.body;
+  let { image, testName, projectName, threshold = 0.1, cropRegion } = req.body;
   if (!image || !testName || !projectName) {
     return res.status(400).json({ error: "Missing image, testName or projectName" });
   }
@@ -26,6 +26,7 @@ module.exports = async (req, res) => {
     const REPO = process.env.GITHUB_REPO;
 
     console.log(`[START] Project: ${projectName} | Test: ${testName}`);
+    console.log(`Crop: ${cropRegion ? JSON.stringify(cropRegion) : 'Full screenshot'}`);
 
     // 1. Fetch base image
     let baseFile;
@@ -41,23 +42,32 @@ module.exports = async (req, res) => {
       throw gitErr;
     }
 
-    // 2. Convert base64
+    // 2. Clean base64
     const baseCleaned = baseFile.data.content.replace(/\s/g, "");
     const incomingCleaned = image.replace(/^data:image\/\w+;base64,/, "").replace(/\s/g, "");
 
-    // 3. Convert to PNG using Jimp
+    // 3. Base image — already PNG (saved by save-base)
     const baseBuffer = Buffer.from(baseCleaned, "base64");
     const basePng = PNG.sync.read(baseBuffer);
     const width = basePng.width;
     const height = basePng.height;
 
-    const currentJimp = await Jimp.read(Buffer.from(incomingCleaned, "base64"));
+    // 4. Current image — JPEG to PNG + crop if needed
+    let currentJimp = await Jimp.read(Buffer.from(incomingCleaned, "base64"));
+
+    if (cropRegion) {
+      const { x, y, width: cw, height: ch } = cropRegion;
+      console.log(`Cropping current: x=${x} y=${y} w=${cw} h=${ch}`);
+      currentJimp = currentJimp.crop(x, y, cw, ch);
+    }
+
+    // Resize to match base image size
     currentJimp.resize(width, height);
     const currentPngBuffer = await currentJimp.getBufferAsync(Jimp.MIME_PNG);
     const currentPng = PNG.sync.read(currentPngBuffer);
     const currentPngBase64 = currentPngBuffer.toString("base64");
 
-    // 4. Save current image
+    // 5. Save current image
     let currentSha;
     try {
       const existing = await octokit.repos.getContent({
@@ -75,7 +85,7 @@ module.exports = async (req, res) => {
       ...(currentSha && { sha: currentSha }),
     });
 
-    // 5. Pixel compare
+    // 6. Pixel compare
     const diff = new PNG({ width, height });
     const mismatchedPixels = pixelmatch(
       basePng.data, currentPng.data, diff.data, width, height,
@@ -86,7 +96,7 @@ module.exports = async (req, res) => {
     const diffPercentage = ((mismatchedPixels / totalPixels) * 100).toFixed(2);
     const pass = parseFloat(diffPercentage) <= threshold;
 
-    // 6. Save diff image if FAIL
+    // 7. Save diff image if FAIL
     let diffImagePath = null;
     if (!pass) {
       diffImagePath = `diff-images/${projectName}/${testName}/${reportId}.png`;
@@ -107,7 +117,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // 7. Load existing reports for this test
+    // 8. Load existing reports
     const reportsPath = `reports/${projectName}/${testName}/reports.json`;
     let reports = [];
     let reportsSha;
@@ -122,14 +132,11 @@ module.exports = async (req, res) => {
       reports = [];
     }
 
+    // Duplicate check — 60 seconds
     const sixtySecondsAgo = Date.now() - 60000;
-    const recentDuplicate = reports.find(r => {
-      const reportTime = new Date(r.timestamp).getTime();
-      return reportTime > sixtySecondsAgo;
-    });
-
+    const recentDuplicate = reports.find(r => new Date(r.timestamp).getTime() > sixtySecondsAgo);
     if (recentDuplicate) {
-      console.log(`[DUPLICATE] Skipping — recent report exists: ${recentDuplicate.id}`);
+      console.log(`[DUPLICATE] Skipping: ${recentDuplicate.id}`);
       return res.status(200).json({
         pass: recentDuplicate.pass,
         diffPercentage: recentDuplicate.diffPercentage,
@@ -140,7 +147,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // 8. Add new report
+    // 9. Save report
     const report = {
       id: reportId,
       testName,
@@ -150,6 +157,7 @@ module.exports = async (req, res) => {
       diffPercentage: parseFloat(diffPercentage),
       mismatchedPixels,
       totalPixels,
+      cropRegion: cropRegion || null,
       baseImagePath: `base-images/${projectName}/${testName}.png`,
       currentImagePath: `current-images/${projectName}/${testName}.png`,
       diffImagePath,
@@ -168,7 +176,7 @@ module.exports = async (req, res) => {
       ...(reportsSha && { sha: reportsSha }),
     });
 
-    // 9. Update projects.json
+    // 10. Update projects.json
     const projectsPath = "reports/projects.json";
     let projects = [];
     let projectsSha;

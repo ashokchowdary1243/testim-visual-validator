@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Only POST allowed" });
 
-  const { image, testName, projectName } = req.body;
+  const { image, testName, projectName, cropRegion } = req.body;
   if (!image || !testName || !projectName) {
     return res.status(400).json({ error: "Missing image, testName or projectName" });
   }
@@ -20,10 +20,19 @@ module.exports = async (req, res) => {
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
     console.log(`Saving base: ${projectName}/${testName}`);
+    console.log(`Crop: ${cropRegion ? JSON.stringify(cropRegion) : 'Full screenshot'}`);
 
     // JPEG to PNG convert
     const inputBuffer = Buffer.from(image, "base64");
-    const jimp = await Jimp.read(inputBuffer);
+    let jimp = await Jimp.read(inputBuffer);
+
+    // Crop cheyyi — cropRegion unte
+    if (cropRegion) {
+      const { x, y, width, height } = cropRegion;
+      console.log(`Cropping: x=${x} y=${y} w=${width} h=${height}`);
+      jimp = jimp.crop(x, y, width, height);
+    }
+
     const pngBuffer = await jimp.getBufferAsync(Jimp.MIME_PNG);
     const pngBase64 = pngBuffer.toString("base64");
 
@@ -77,7 +86,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Base image saved: ${projectName}/${testName}`
+      message: `Base image saved: ${projectName}/${testName} ${cropRegion ? '(cropped)' : '(full)'}`
     });
 
   } catch (err) {
