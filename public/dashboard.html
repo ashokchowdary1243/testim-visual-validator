@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Validator Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0d1117;
+  --sidebar: #161b27;
+  --card: #1c2333;
+  --border: #2a3244;
+  --accent: #4f8ef7;
+  --pass: #22c55e;
+  --fail: #ef4444;
+  --warn: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #6b7a99;
+  --hover: #232c40;
+  --active: #1e2d4a;
+}
+body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* TOPBAR */
+.topbar {
+  height: 52px; background: var(--sidebar); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0;
+}
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
+.logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #4f8ef7, #7c3aed); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.topbar-mid { flex: 1; display: flex; align-items: center; gap: 8px; max-width: 700px; margin: 0 16px; }
+.inp {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 6px 11px; border-radius: 6px; font-size: 12px; flex: 1;
+  transition: border 0.15s;
+}
+.inp:focus { outline: none; border-color: var(--accent); }
+.inp::placeholder { color: var(--muted); }
+.btn {
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.15s; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #3b7ae0; }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--hover); }
+.btn-pdf { background: #7c3aed; color: #fff; }
+.btn-pdf:hover { background: #6d28d9; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.topbar-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+/* LAYOUT */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+
+.sidebar-top { padding: 10px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+
+.select-row { display: flex; align-items: center; gap: 6px; }
+.sel {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 5px 8px; border-radius: 6px; font-size: 11px; flex: 1; cursor: pointer;
+}
+.sel:focus { outline: none; border-color: var(--accent); }
+
+.sidebar-filter { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.filter-btn {
+  flex: 1; padding: 4px 6px; border-radius: 5px; font-size: 10px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+  transition: all 0.12s; text-align: center;
+}
+.filter-btn.active-all { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.1); }
+.filter-btn.active-pass { border-color: var(--pass); color: var(--pass); background: rgba(34,197,94,0.1); }
+.filter-btn.active-fail { border-color: var(--fail); color: var(--fail); background: rgba(239,68,68,0.1); }
+
+.sidebar-list-header {
+  padding: 6px 10px; display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-list-header span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
+.sel-all-btn { font-size: 10px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.sel-all-btn:hover { text-decoration: underline; }
+
+.reports-list { flex: 1; overflow-y: auto; padding: 4px; }
+.reports-list::-webkit-scrollbar { width: 3px; }
+.reports-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.report-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 8px;
+  border-radius: 7px; cursor: pointer; transition: background 0.1s;
+  margin-bottom: 1px; border: 1px solid transparent;
+}
+.report-item:hover { background: var(--hover); }
+.report-item.active { background: var(--active); border-color: var(--accent); }
+
+.report-item input[type="checkbox"] { width: 13px; height: 13px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.report-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-pass { background: var(--pass); box-shadow: 0 0 4px rgba(34,197,94,0.5); }
+.dot-fail { background: var(--fail); box-shadow: 0 0 4px rgba(239,68,68,0.5); }
+
+.report-info { flex: 1; min-width: 0; }
+.report-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.report-date { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.report-pct { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.pct-pass { color: var(--pass); }
+.pct-fail { color: var(--fail); }
+
+.sidebar-footer {
+  padding: 8px; border-top: 1px solid var(--border);
+  display: flex; gap: 6px;
+}
+.sidebar-footer .btn { flex: 1; justify-content: center; font-size: 11px; padding: 6px 8px; }
+
+.sel-bar {
+  padding: 5px 10px; background: rgba(79,142,247,0.08);
+  border-top: 1px solid rgba(79,142,247,0.2);
+  font-size: 11px; color: var(--accent); display: none; align-items: center;
+}
+.sel-bar.show { display: flex; }
+
+.empty-list { padding: 24px 10px; text-align: center; color: var(--muted); font-size: 11px; line-height: 1.6; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.empty-main {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; color: var(--muted);
+}
+.empty-main-icon { width: 56px; height: 56px; opacity: 0.15; }
+.empty-main h3 { font-size: 15px; color: var(--text); }
+.empty-main p { font-size: 12px; text-align: center; max-width: 280px; line-height: 1.6; }
+
+/* DETAIL */
+.detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.detail-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  background: var(--sidebar);
+}
+.detail-title { flex: 1; min-width: 0; }
+.detail-title h2 { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-title p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.status-pill {
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.pill-pass { background: rgba(34,197,94,0.15); color: var(--pass); border: 1px solid rgba(34,197,94,0.3); }
+.pill-fail { background: rgba(239,68,68,0.15); color: var(--fail); border: 1px solid rgba(239,68,68,0.3); }
+
+.stats-row {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  background: var(--card);
+}
+.stat-item {
+  flex: 1; padding: 10px 16px; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.stat-item:last-child { border-right: none; }
+.stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.stat-val { font-size: 14px; font-weight: 700; }
+
+.detail-actions {
+  padding: 10px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.detail-actions span { font-size: 11px; color: var(--muted); flex: 1; }
+
+/* IMAGES */
+.images-area { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.images-area::-webkit-scrollbar { width: 4px; }
+.images-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.img-grid { display: grid; gap: 14px; }
+.img-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.img-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.img-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.img-card-head {
+  padding: 9px 13px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.img-card-head .img-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
+.img-card-body {
+  padding: 10px; display: flex; align-items: center; justify-content: center;
+  min-height: 180px; background: #080b10;
+}
+.img-card-body img { max-width: 100%; max-height: 420px; object-fit: contain; border-radius: 4px; display: block; }
+.img-loading { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 8px; }
+.img-err { color: var(--fail); font-size: 11px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+/* LOADING */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); }
+.overlay-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px 44px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.overlay-box .spin { width: 28px; height: 28px; border-width: 3px; }
+.overlay-box p { font-size: 13px; color: var(--muted); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;
+  font-size: 12px; z-index: 1000; display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5); animation: toastIn 0.2s ease;
+}
+@keyframes toastIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+      </svg>
+    </div>
+    Visual Validator
+  </div>
+
+  <div class="topbar-mid">
+    <input class="inp" id="apiUrl" placeholder="https://your-project.vercel.app" style="max-width:280px" />
+    <input class="inp" id="repoPath" placeholder="owner/repo" style="max-width:180px" />
+  </div>
+
+  <div class="topbar-right">
+    <div id="connStatus" style="font-size:11px;color:var(--muted)">Not connected</div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <!-- Project dropdown -->
+      <div class="select-row">
+        <select class="sel" id="projectSel" onchange="onProjectChange()">
+          <option value="">Select Project...</option>
+        </select>
+      </div>
+      <!-- Test name dropdown -->
+      <div class="select-row">
+        <select class="sel" id="testSel" onchange="onTestChange()" disabled>
+          <option value="">Select Test...</option>
+        </select>
+      </div>
+      <!-- Filter -->
+      <div class="sidebar-filter">
+        <button class="filter-btn active-all" id="fAll" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" id="fPass" onclick="setFilter('pass')">✓ Pass</button>
+        <button class="filter-btn" id="fFail" onclick="setFilter('fail')">✗ Fail</button>
+      </div>
+    </div>
+
+    <div class="sidebar-list-header">
+      <span id="runCount">0 runs</span>
+      <button class="sel-all-btn" onclick="toggleSelectAll()">Select All</button>
+    </div>
+
+    <div class="reports-list" id="reportsList">
+      <div class="empty-list">Enter API URL & repo,<br>then select a project</div>
+    </div>
+
+    <div class="sel-bar" id="selBar">
+      <span id="selCount">0 selected</span>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-pdf" id="pdfBtn" onclick="downloadPDF()" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        PDF
+      </button>
+      <button class="btn btn-danger" id="delBtn" onclick="deleteSelected()" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6M10,11v6M14,11v6M9,6V4h6v2"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <div class="empty-main">
+      <svg class="empty-main-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+      </svg>
+      <h3>No report selected</h3>
+      <p>Configure API URL and repo path, select a project and test, then click a run to view details.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- LOADING -->
+<div class="overlay" id="overlay" style="display:none">
+  <div class="overlay-box">
+    <div class="spin"></div>
+    <p id="overlayText">Loading...</p>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+let projects = [];
+let allReports = [];
+let filteredReports = [];
+let selectedIds = new Set();
+let activeReportId = null;
+let currentFilter = 'all';
+let currentProject = '';
+let currentTest = '';
+
+// ─── INIT ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const savedApi = localStorage.getItem('vv_api');
+  const savedRepo = localStorage.getItem('vv_repo');
+  if (savedApi) document.getElementById('apiUrl').value = savedApi;
+  if (savedRepo) document.getElementById('repoPath').value = savedRepo;
+
+  if (savedApi && savedRepo) {
+    autoInit();
+  }
+});
+
+async function autoInit() {
+  await loadProjects();
+}
+
+// ─── HELPERS ──────────────────────────────────────────
+function getApiUrl() { return document.getElementById('apiUrl').value.trim().replace(/\/$/, ''); }
+function getRepo() { return document.getElementById('repoPath').value.trim(); }
+function getRepoOwner() { return getRepo().split('/')[0]; }
+function getRepoName() { return getRepo().split('/')[1]; }
+function getRawBase() { return `https://raw.githubusercontent.com/${getRepoOwner()}/${getRepoName()}/main/`; }
+
+function saveConfig() {
+  localStorage.setItem('vv_api', getApiUrl());
+  localStorage.setItem('vv_repo', getRepo());
+}
+
+function loading(text = 'Loading...', show = true) {
+  document.getElementById('overlay').style.display = show ? 'flex' : 'none';
+  document.getElementById('overlayText').textContent = text;
+}
+
+function toast(msg, color = '#22c55e') {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0"></div>${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function setStatus(msg, color = 'var(--muted)') {
+  const el = document.getElementById('connStatus');
+  el.textContent = msg;
+  el.style.color = color;
+}
+
+// ─── LOAD PROJECTS ────────────────────────────────────
+async function loadProjects() {
+  const api = getApiUrl();
+  const repo = getRepo();
+  if (!api || !repo || !repo.includes('/')) return;
+
+  saveConfig();
+  loading('Loading projects...');
+
+  try {
+    const url = getRawBase() + `reports/projects.json?t=${Date.now()}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      projects = [];
+      setStatus('No projects yet', 'var(--warn)');
+      loading('', false);
+      return;
+    }
+
+    projects = await res.json();
+    renderProjectDropdown();
+    setStatus(`Connected · ${projects.length} project(s)`, 'var(--pass)');
+
+    // Auto select if only one
+    if (projects.length === 1) {
+      document.getElementById('projectSel').value = projects[0].name;
+      onProjectChange();
+    }
+
+    toast(`Loaded ${projects.length} project(s)`);
+  } catch (e) {
+    setStatus('Connection failed', 'var(--fail)');
+    toast('Failed: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
+
+function renderProjectDropdown() {
+  const sel = document.getElementById('projectSel');
+  sel.innerHTML = '<option value="">Select Project...</option>';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.name;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+}
+
+// ─── PROJECT CHANGE ───────────────────────────────────
+function onProjectChange() {
+  currentProject = document.getElementById('projectSel').value;
+  currentTest = '';
+  allReports = [];
+  filteredReports = [];
+  selectedIds.clear();
+
+  const testSel = document.getElementById('testSel');
+  testSel.innerHTML = '<option value="">Select Test...</option>';
+  testSel.disabled = !currentProject;
+
+  if (!currentProject) {
+    renderList();
+    return;
+  }
+
+  const proj = projects.find(p => p.name === currentProject);
+  if (proj && proj.testNames) {
+    proj.testNames.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      testSel.appendChild(opt);
+    });
+
+    // Auto select if only one test
+    if (proj.testNames.length === 1) {
+      testSel.value = proj.testNames[0];
+      onTestChange();
+    }
+  }
+}
+
+// ─── TEST CHANGE ──────────────────────────────────────
+async function onTestChange() {
+  currentTest = document.getElementById('testSel').value;
+  allReports = [];
+  filteredReports = [];
+  selectedIds.clear();
+  activeReportId = null;
+
+  if (!currentTest) {
+    renderList();
+    return;
+  }
+
+  loading('Loading reports...');
+
+  try {
+    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      allReports = [];
+      toast('No reports yet for this test', '#f59e0b');
+    } else {
+      allReports = await res.json();
+      // Sort by date newest first
+      allReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      toast(`Loaded ${allReports.length} report(s)`);
+    }
+
+    applyFilter();
+    renderList();
+    resetMain();
+  } catch (e) {
+    toast('Failed: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
+
+// ─── FILTER ───────────────────────────────────────────
+function setFilter(f) {
+  currentFilter = f;
+  document.getElementById('fAll').className = 'filter-btn' + (f === 'all' ? ' active-all' : '');
+  document.getElementById('fPass').className = 'filter-btn' + (f === 'pass' ? ' active-pass' : '');
+  document.getElementById('fFail').className = 'filter-btn' + (f === 'fail' ? ' active-fail' : '');
+  applyFilter();
+  renderList();
+}
+
+function applyFilter() {
+  if (currentFilter === 'pass') filteredReports = allReports.filter(r => r.pass);
+  else if (currentFilter === 'fail') filteredReports = allReports.filter(r => !r.pass);
+  else filteredReports = [...allReports];
+}
+
+// ─── RENDER LIST ──────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('reportsList');
+  document.getElementById('runCount').textContent = `${filteredReports.length} run${filteredReports.length !== 1 ? 's' : ''}`;
+
+  if (!filteredReports.length) {
+    list.innerHTML = '<div class="empty-list">No reports found</div>';
+    updateSelUI();
+    return;
+  }
+
+  list.innerHTML = filteredReports.map(r => {
+    const d = new Date(r.timestamp);
+    const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    return `
+      <div class="report-item ${r.id === activeReportId ? 'active' : ''}" onclick="clickReport('${r.id}', event)">
+        <input type="checkbox" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleCheck('${r.id}', event)" />
+        <div class="report-dot ${r.pass ? 'dot-pass' : 'dot-fail'}"></div>
+        <div class="report-info">
+          <div class="report-name">${dateStr}</div>
+          <div class="report-date">${timeStr}</div>
+        </div>
+        <div class="report-pct ${r.pass ? 'pct-pass' : 'pct-fail'}">${r.diffPercentage}%</div>
+      </div>
+    `;
+  }).join('');
+
+  updateSelUI();
+}
+
+// ─── SELECTION ────────────────────────────────────────
+function toggleCheck(id, e) {
+  e.stopPropagation();
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  updateSelUI();
+  renderList();
+}
+
+function toggleSelectAll() {
+  if (selectedIds.size === filteredReports.length && filteredReports.length > 0) {
+    selectedIds.clear();
+  } else {
+    filteredReports.forEach(r => selectedIds.add(r.id));
+  }
+  updateSelUI();
+  renderList();
+}
+
+function updateSelUI() {
+  const count = selectedIds.size;
+  const has = count > 0;
+  document.getElementById('pdfBtn').disabled = !has;
+  document.getElementById('delBtn').disabled = !has;
+  const bar = document.getElementById('selBar');
+  bar.className = 'sel-bar' + (has ? ' show' : '');
+  document.getElementById('selCount').textContent = `${count} selected`;
+}
+
+// ─── CLICK REPORT ─────────────────────────────────────
+function clickReport(id, e) {
+  if (e.target.type === 'checkbox') return;
+  activeReportId = id;
+  const report = filteredReports.find(r => r.id === id);
+  if (report) showDetail(report);
+  renderList();
+}
+
+// ─── SHOW DETAIL ──────────────────────────────────────
+function showDetail(report) {
+  const main = document.getElementById('main');
+  const isFail = !report.pass;
+  const d = new Date(report.timestamp);
+  const dateStr = d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  main.innerHTML = `
+    <div class="detail">
+      <div class="detail-header">
+        <div class="detail-title">
+          <h2>${report.testName}</h2>
+          <p>${report.projectName} &nbsp;·&nbsp; ${dateStr}</p>
+        </div>
+        <div class="status-pill ${report.pass ? 'pill-pass' : 'pill-fail'}">
+          ${report.pass ? '✓ PASS' : '✗ FAIL'}
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">Diff %</div>
+          <div class="stat-val" style="color:${report.pass ? 'var(--pass)' : 'var(--fail)'}">${report.diffPercentage}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Mismatched Pixels</div>
+          <div class="stat-val">${report.mismatchedPixels.toLocaleString()}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Pixels</div>
+          <div class="stat-val">${report.totalPixels.toLocaleString()}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Report ID</div>
+          <div class="stat-val" style="font-size:10px;color:var(--muted)">${report.id}</div>
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        <span>${report.message}</span>
+        <button class="btn btn-pdf" onclick="downloadSinglePDF('${report.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download PDF
+        </button>
+        <button class="btn btn-danger" onclick="deleteSingle('${report.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/></svg>
+          Delete
+        </button>
+      </div>
+
+      <div class="images-area">
+        <div class="img-grid ${isFail ? 'cols-3' : 'cols-2'}">
+
+          <div class="img-card">
+            <div class="img-card-head">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span class="img-label">Base Image</span>
+            </div>
+            <div class="img-card-body" id="img-base">
+              <div class="img-loading"><div class="spin"></div> Loading...</div>
+            </div>
+          </div>
+
+          <div class="img-card">
+            <div class="img-card-head">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span class="img-label">Current Screenshot</span>
+            </div>
+            <div class="img-card-body" id="img-current">
+              <div class="img-loading"><div class="spin"></div> Loading...</div>
+            </div>
+          </div>
+
+          ${isFail ? `
+          <div class="img-card">
+            <div class="img-card-head">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span class="img-label">Diff (mismatched pixels)</span>
+            </div>
+            <div class="img-card-body" id="img-diff">
+              <div class="img-loading"><div class="spin"></div> Loading...</div>
+            </div>
+          </div>
+          ` : ''}
+
+        </div>
+      </div>
+    </div>
+  `;
+
+  const base = getRawBase();
+  loadImg('img-base', base + report.baseImagePath);
+  loadImg('img-current', base + report.currentImagePath);
+  if (isFail && report.diffImagePath) loadImg('img-diff', base + report.diffImagePath);
+}
+
+function loadImg(containerId, url) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  const img = new Image();
+  img.onload = () => { c.innerHTML = ''; c.appendChild(img); };
+  img.onerror = () => { c.innerHTML = '<div class="img-err">Failed to load image</div>'; };
+  img.src = url + '?t=' + Date.now();
+  img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
+}
+
+function resetMain() {
+  document.getElementById('main').innerHTML = `
+    <div class="empty-main">
+      <svg class="empty-main-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <h3>Select a run</h3>
+      <p>Click any run from the left panel to view details.</p>
+    </div>
+  `;
+}
+
+// ─── DELETE ───────────────────────────────────────────
+async function deleteSingle(id) {
+  if (!confirm('Delete this report?')) return;
+  await doDelete([id]);
+}
+
+async function deleteSelected() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Delete ${selectedIds.size} report(s)?`)) return;
+  await doDelete([...selectedIds]);
+}
+
+async function doDelete(ids) {
+  const api = getApiUrl();
+  if (!api) { toast('Enter API URL', '#ef4444'); return; }
+
+  loading('Deleting...');
+  try {
+    const res = await fetch(`${api}/api/delete-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportIds: ids, projectName: currentProject, testName: currentTest })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast(`Deleted ${data.deleted} report(s)`);
+      if (ids.includes(activeReportId)) { activeReportId = null; resetMain(); }
+      selectedIds.clear();
+      await onTestChange();
+    } else {
+      toast('Delete failed: ' + data.error, '#ef4444');
+    }
+  } catch (e) {
+    toast('Error: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
+
+// ─── PDF ──────────────────────────────────────────────
+async function downloadSinglePDF(id) {
+  const report = allReports.find(r => r.id === id);
+  if (!report) return;
+  await generatePDF([report]);
+}
+
+async function downloadPDF() {
+  const sel = allReports.filter(r => selectedIds.has(r.id));
+  if (!sel.length) return;
+  await generatePDF(sel);
+}
+
+async function generatePDF(reports) {
+  loading('Generating PDF...');
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, H = 297, M = 12;
+
+    for (let i = 0; i < reports.length; i++) {
+      const r = reports[i];
+      if (i > 0) pdf.addPage();
+
+      const base = getRawBase();
+      const isFail = !r.pass;
+
+      // Background
+      pdf.setFillColor(13, 17, 23);
+      pdf.rect(0, 0, W, H, 'F');
+
+      // Header bar
+      pdf.setFillColor(22, 27, 39);
+      pdf.rect(0, 0, W, 24, 'F');
+
+      // Title
+      pdf.setTextColor(79, 142, 247);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Visual Validator Report', M, 10);
+
+      // Project / test
+      pdf.setTextColor(107, 122, 153);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`${r.projectName} / ${r.testName}`, M, 16);
+      pdf.text(new Date(r.timestamp).toLocaleString(), M, 21);
+
+      // Status badge
+      const sc = r.pass ? [34,197,94] : [239,68,68];
+      pdf.setFillColor(...sc);
+      pdf.roundedRect(W - M - 20, 7, 18, 9, 2, 2, 'F');
+      pdf.setTextColor(255,255,255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(r.pass ? 'PASS' : 'FAIL', W - M - 11, 12.5, { align: 'center' });
+
+      // Stats row
+      pdf.setFillColor(28, 35, 51);
+      pdf.rect(0, 24, W, 14, 'F');
+      const stats = [
+        ['DIFF %', r.diffPercentage + '%'],
+        ['MISMATCHED', r.mismatchedPixels.toLocaleString()],
+        ['TOTAL PIXELS', r.totalPixels.toLocaleString()],
+        ['RESULT', r.pass ? 'MATCH' : 'MISMATCH'],
+      ];
+      let sx = M;
+      stats.forEach(([label, val]) => {
+        pdf.setTextColor(107,122,153); pdf.setFontSize(6); pdf.setFont('helvetica','normal');
+        pdf.text(label, sx, 29);
+        pdf.setTextColor(r.pass && label==='DIFF %' ? 34 : label==='RESULT' ? (r.pass?34:239) : 226,
+          r.pass && label==='DIFF %' ? 197 : label==='RESULT' ? (r.pass?197:68) : 232,
+          r.pass && label==='DIFF %' ? 94 : label==='RESULT' ? (r.pass?94:68) : 240);
+        pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+        pdf.text(val, sx, 35);
+        sx += 48;
+      });
+
+      // Images
+      const imgY = 42;
+      const cols = isFail ? 3 : 2;
+      const imgW = (W - M * 2 - (cols-1)*4) / cols;
+
+      const imgs = [
+        { label: 'BASE IMAGE', path: base + r.baseImagePath },
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath },
+        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath }] : [])
+      ];
+
+      for (let j = 0; j < imgs.length; j++) {
+        const { label, path } = imgs[j];
+        const xp = M + j * (imgW + 4);
+        const cardH = H - imgY - M;
+
+        pdf.setFillColor(28,35,51);
+        pdf.roundedRect(xp, imgY, imgW, cardH, 2, 2, 'F');
+
+        pdf.setTextColor(107,122,153); pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+        pdf.text(label, xp + 3, imgY + 6);
+
+        try {
+          const imgData = await fetchB64(path);
+          pdf.addImage(imgData, 'PNG', xp + 2, imgY + 10, imgW - 4, cardH - 14, '', 'FAST');
+        } catch (e) {
+          pdf.setTextColor(239,68,68); pdf.setFontSize(7);
+          pdf.text('Image unavailable', xp + 3, imgY + cardH/2);
+        }
+      }
+
+      // Footer
+      pdf.setTextColor(42,48,68); pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+      pdf.text(`Visual Validator  ·  Page ${i+1} of ${reports.length}  ·  ${r.id}`, W/2, H-5, { align: 'center' });
+    }
+
+    pdf.save(`vv-report-${Date.now()}.pdf`);
+    toast('PDF downloaded!');
+  } catch (e) {
+    toast('PDF error: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
+
+async function fetchB64(url) {
+  const r = await fetch(url + '?t=' + Date.now());
+  const blob = await r.blob();
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+}
+
+// Auto-reload when config changes
+document.getElementById('apiUrl').value = 'https://testim-visual-validator-new.vercel.app';
+document.getElementById('repoPath').value = 'ashokchowdary1243/testim-visual-validator';
+loadProjects();
+</script>
+</body>
+</html>
