@@ -21,6 +21,31 @@
   --hover: #232c40;
   --active: #1e2d4a;
 }
+
+/* ── THEMES ─────────────────────────── */
+[data-theme="midnight"] {
+  --bg: #0d1117; --sidebar: #161b27; --card: #1c2333;
+  --border: #2a3244; --accent: #4f8ef7; --text: #e2e8f0;
+  --muted: #6b7a99; --hover: #232c40; --active: #1e2d4a;
+}
+
+[data-theme="light"] {
+  --bg: #f0f4f8; --sidebar: #ffffff; --card: #ffffff;
+  --border: #d1d9e6; --accent: #3b7ae0; --text: #1a202c;
+  --muted: #718096; --hover: #e8edf5; --active: #dce8ff;
+  --pass: #22863a; --fail: #c0392b; --warn: #d67e00;
+}
+
+/* Theme switcher pill */
+.theme-switcher {
+  display: flex; align-items: center; gap: 5px; margin-left: 8px;
+}
+.theme-dot {
+  width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+}
+.theme-dot:hover, .theme-dot.active { border-color: var(--text); transform: scale(1.2); }
+.theme-label { font-size: 10px; color: var(--muted); white-space: nowrap; }
 body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
 /* TOPBAR */
@@ -286,6 +311,22 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
 .orphan-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
 
 .cleanup-empty { text-align: center; color: var(--muted); font-size: 12px; padding: 30px 10px; }
+
+/* Delete project confirm modal */
+.del-proj-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1200;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+.del-proj-modal.show { display: flex; }
+.del-proj-box {
+  background: var(--card); border: 1px solid var(--fail);
+  border-radius: 12px; padding: 24px 28px; width: 360px; max-width: 92vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.del-proj-box h3 { font-size: 15px; font-weight: 700; color: var(--fail); margin-bottom: 10px; }
+.del-proj-box p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+.del-proj-box strong { color: var(--text); }
+.del-proj-actions { display: flex; gap: 8px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -307,6 +348,13 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
   </div>
 
   <div class="topbar-right">
+    <!-- Theme Switcher -->
+    <div class="theme-switcher" title="Switch Theme">
+      <span class="theme-label">Theme:</span>
+      <div class="theme-dot active" data-theme="midnight" style="background:linear-gradient(135deg,#0d1117,#4f8ef7)" onclick="setTheme('midnight')" title="Midnight (Dark)"></div>
+      <div class="theme-dot" data-theme="light" style="background:linear-gradient(135deg,#f0f4f8,#3b7ae0)" onclick="setTheme('light')" title="Light"></div>
+    </div>
+    <div style="width:1px;height:22px;background:var(--border);margin:0 4px"></div>
     <button class="btn btn-refresh" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Auto-refresh reports">
       <div class="dot"></div>
       Auto-refresh: Off
@@ -324,11 +372,16 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-top">
-      <!-- Project dropdown -->
+      <!-- Project dropdown + delete -->
       <div class="select-row">
-        <select class="sel" id="projectSel" onchange="onProjectChange()">
+        <select class="sel" id="projectSel" onchange="onProjectChange()" style="flex:1">
           <option value="">Select Project...</option>
         </select>
+        <button class="btn btn-danger" style="padding:5px 8px;flex-shrink:0" onclick="openDeleteProjectModal()" title="Delete entire project">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6M10,11v6M14,11v6M9,6V4h6v2"/>
+          </svg>
+        </button>
       </div>
       <!-- Test name dropdown -->
       <div class="select-row">
@@ -408,6 +461,24 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
       <span class="kbd-hint" id="cleanupSelCount">0 selected</span>
       <button class="btn btn-ghost" style="margin-left:auto" onclick="toggleSelectAllOrphans()">Select All</button>
       <button class="btn btn-danger" id="cleanupDeleteBtn" onclick="deleteOrphans()" disabled>Delete Selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE PROJECT MODAL -->
+<div class="del-proj-modal" id="delProjModal">
+  <div class="del-proj-box">
+    <h3>⚠️ Delete Project</h3>
+    <p>Are you sure you want to delete project <strong id="delProjName"></strong>?<br><br>
+    This will permanently delete <strong>ALL tests, reports, and images</strong> for this project. This action cannot be undone!</p>
+    <div class="del-proj-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteProjectModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteProject()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6M10,11v6M14,11v6M9,6V4h6v2"/>
+        </svg>
+        Yes, Delete Project
+      </button>
     </div>
   </div>
 </div>
@@ -1147,6 +1218,14 @@ async function generatePDF(reports) {
       pdf.text(`${r.projectName} / ${r.testName}`, M, 16);
       pdf.text(new Date(r.timestamp).toLocaleString(), M, 21);
 
+      // Crop region info (if any)
+      if (r.cropRegion) {
+        const cr = r.cropRegion;
+        pdf.setTextColor(79, 142, 247);
+        pdf.setFontSize(6.5);
+        pdf.text(`Crop: x=${cr.x} y=${cr.y} w=${cr.width} h=${cr.height}`, W - M, 21, { align: 'right' });
+      }
+
       // Status badge
       const sc = r.pass ? [34,197,94] : [239,68,68];
       pdf.setFillColor(...sc);
@@ -1183,13 +1262,13 @@ async function generatePDF(reports) {
       const imgW = (W - M * 2 - (cols-1)*4) / cols;
 
       const imgs = [
-        { label: 'BASE IMAGE', path: base + r.baseImagePath },
-        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath },
-        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath }] : [])
+        { label: 'BASE IMAGE', path: base + r.baseImagePath, crop: r.cropRegion },
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, crop: r.cropRegion },
+        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, crop: null }] : [])
       ];
 
       for (let j = 0; j < imgs.length; j++) {
-        const { label, path } = imgs[j];
+        const { label, path, crop } = imgs[j];
         const xp = M + j * (imgW + 4);
         const cardH = H - imgY - M;
 
@@ -1200,7 +1279,9 @@ async function generatePDF(reports) {
         pdf.text(label, xp + 3, imgY + 6);
 
         try {
-          const imgData = await fetchB64(path);
+          const rawB64 = await fetchB64(path);
+          // If cropRegion exists, crop using canvas before adding to PDF
+          const imgData = crop ? await cropImageB64(rawB64, crop) : rawB64;
           pdf.addImage(imgData, 'PNG', xp + 2, imgY + 10, imgW - 4, cardH - 14, '', 'FAST');
         } catch (e) {
           pdf.setTextColor(239,68,68); pdf.setFontSize(7);
@@ -1222,6 +1303,23 @@ async function generatePDF(reports) {
   }
 }
 
+// Crop a base64 image using canvas — returns cropped base64
+async function cropImageB64(b64, crop) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = crop.width;
+      canvas.height = crop.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = b64;
+  });
+}
+
 async function fetchB64(url) {
   const r = await fetch(url + '?t=' + Date.now());
   const blob = await r.blob();
@@ -1233,9 +1331,69 @@ async function fetchB64(url) {
   });
 }
 
+// ─── THEME ────────────────────────────────────────────
+function setTheme(name) {
+  document.documentElement.setAttribute('data-theme', name);
+  localStorage.setItem('vv_theme', name);
+  document.querySelectorAll('.theme-dot').forEach(d => {
+    d.classList.toggle('active', d.dataset.theme === name);
+  });
+}
+
+// ─── DELETE PROJECT ───────────────────────────────────
+function openDeleteProjectModal() {
+  if (!currentProject) {
+    toast('Select a project first', '#f59e0b');
+    return;
+  }
+  document.getElementById('delProjName').textContent = `"${currentProject}"`;
+  document.getElementById('delProjModal').classList.add('show');
+}
+
+function closeDeleteProjectModal() {
+  document.getElementById('delProjModal').classList.remove('show');
+}
+
+async function confirmDeleteProject() {
+  closeDeleteProjectModal();
+  const api = getApiUrl();
+  if (!api) { toast('Enter API URL', '#ef4444'); return; }
+
+  loading(`Deleting project '${currentProject}'...`);
+  try {
+    const res = await fetch(`${api}/api/delete-project`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName: currentProject })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast(`Project '${currentProject}' deleted! ${data.deleted} files removed.`);
+      currentProject = '';
+      currentTest = '';
+      allReports = [];
+      activeReportId = null;
+      resetMain();
+      await loadProjects();
+    } else {
+      toast('Delete failed: ' + data.error, '#ef4444');
+    }
+  } catch (e) {
+    toast('Error: ' + e.message, '#ef4444');
+  } finally {
+    loading('', false);
+  }
+}
+
 // Auto-reload when config changes
 document.getElementById('apiUrl').value = 'https://testim-visual-validator-new.vercel.app';
 document.getElementById('repoPath').value = 'ashokchowdary1243/testim-visual-validator';
+
+const savedTheme = localStorage.getItem('vv_theme');
+const validThemes = ['midnight','light'];
+setTheme(validThemes.includes(savedTheme) ? savedTheme : 'midnight');
+
 loadProjects();
 </script>
 </body>
