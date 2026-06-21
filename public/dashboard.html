@@ -212,6 +212,40 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
   box-shadow: 0 8px 28px rgba(0,0,0,0.5); animation: toastIn 0.2s ease;
 }
 @keyframes toastIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* AUTO-REFRESH BTN */
+.btn-refresh { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+.btn-refresh.on { background: rgba(34,197,94,0.12); color: var(--pass); border-color: rgba(34,197,94,0.35); }
+.btn-refresh .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.btn-refresh.on .dot { background: var(--pass); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* TREND CHART */
+.trend-wrap { padding: 8px 10px 4px; border-bottom: 1px solid var(--border); }
+.trend-wrap-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.trend-svg { width: 100%; display: block; }
+.trend-pt { cursor: pointer; }
+.trend-pt:hover { r: 4.5; }
+
+/* IMAGE ZOOM */
+.img-card-body img { cursor: zoom-in; transition: opacity 0.1s; }
+.zoom-overlay {
+  position: fixed; inset: 0; background: rgba(5,7,12,0.92); z-index: 1100;
+  display: none; align-items: center; justify-content: center; cursor: zoom-out;
+  backdrop-filter: blur(2px);
+}
+.zoom-overlay.show { display: flex; }
+.zoom-overlay img { max-width: 92vw; max-height: 92vh; object-fit: contain; border-radius: 6px; box-shadow: 0 12px 50px rgba(0,0,0,0.6); }
+.zoom-close {
+  position: absolute; top: 16px; right: 20px; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;
+}
+.zoom-hint { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); }
+
+/* KBD HINT */
+.kbd-hint { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.kbd-hint kbd { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: inherit; font-size: 10px; }
 </style>
 </head>
 <body>
@@ -227,12 +261,16 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
     Visual Validator
   </div>
 
-  <div class="topbar-mid">
+  <div class="topbar-mid" style="display:none">
     <input class="inp" id="apiUrl" placeholder="https://your-project.vercel.app" style="max-width:280px" />
     <input class="inp" id="repoPath" placeholder="owner/repo" style="max-width:180px" />
   </div>
 
   <div class="topbar-right">
+    <button class="btn btn-refresh" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Auto-refresh reports">
+      <div class="dot"></div>
+      Auto-refresh: Off
+    </button>
     <div id="connStatus" style="font-size:11px;color:var(--muted)">Not connected</div>
   </div>
 </div>
@@ -261,6 +299,11 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
         <button class="filter-btn" id="fPass" onclick="setFilter('pass')">✓ Pass</button>
         <button class="filter-btn" id="fFail" onclick="setFilter('fail')">✗ Fail</button>
       </div>
+    </div>
+
+    <div class="trend-wrap" id="trendWrap" style="display:none">
+      <div class="trend-wrap-label"><span>Trend (diff %)</span><span id="trendThreshold"></span></div>
+      <div id="trendChart"></div>
     </div>
 
     <div class="sidebar-list-header">
@@ -301,6 +344,13 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
 
 </div>
 
+<!-- ZOOM OVERLAY -->
+<div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom(event)">
+  <div class="zoom-close" onclick="closeZoom(event)">✕</div>
+  <img id="zoomImg" src="" onclick="event.stopPropagation()" />
+  <div class="zoom-hint">Click anywhere or press Esc to close</div>
+</div>
+
 <!-- LOADING -->
 <div class="overlay" id="overlay" style="display:none">
   <div class="overlay-box">
@@ -319,6 +369,9 @@ let activeReportId = null;
 let currentFilter = 'all';
 let currentProject = '';
 let currentTest = '';
+let autoRefreshOn = false;
+let autoRefreshTimer = null;
+const AUTO_REFRESH_MS = 8000;
 
 // ─── INIT ─────────────────────────────────────────────
 window.addEventListener('load', () => {
@@ -514,6 +567,7 @@ function renderList() {
   if (!filteredReports.length) {
     list.innerHTML = '<div class="empty-list">No reports found</div>';
     updateSelUI();
+    renderTrend();
     return;
   }
 
@@ -536,6 +590,7 @@ function renderList() {
   }).join('');
 
   updateSelUI();
+  renderTrend();
 }
 
 // ─── SELECTION ────────────────────────────────────────
@@ -679,6 +734,19 @@ function loadImg(containerId, url) {
   img.onerror = () => { c.innerHTML = '<div class="img-err">Failed to load image</div>'; };
   img.src = url + '?t=' + Date.now();
   img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
+  img.onclick = () => zoomImage(img.src);
+}
+
+// ─── ZOOM ─────────────────────────────────────────────
+function zoomImage(src) {
+  document.getElementById('zoomImg').src = src;
+  document.getElementById('zoomOverlay').classList.add('show');
+}
+
+function closeZoom(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('zoomOverlay').classList.remove('show');
+  document.getElementById('zoomImg').src = '';
 }
 
 function resetMain() {
@@ -690,6 +758,116 @@ function resetMain() {
     </div>
   `;
 }
+
+// ─── TREND CHART ──────────────────────────────────────
+function renderTrend() {
+  const wrap = document.getElementById('trendWrap');
+  const chartEl = document.getElementById('trendChart');
+  if (!allReports.length) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  // Chronological order (oldest -> newest), cap to last 30 points
+  const pts = [...allReports].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).slice(-30);
+  document.getElementById('trendThreshold').textContent = `${pts.length} run${pts.length !== 1 ? 's' : ''}`;
+
+  const W = 236, H = 46, PAD = 6;
+  const maxVal = Math.max(1, ...pts.map(p => p.diffPercentage));
+  const stepX = pts.length > 1 ? (W - PAD * 2) / (pts.length - 1) : 0;
+
+  const coords = pts.map((p, i) => {
+    const x = PAD + i * stepX;
+    const y = H - PAD - (p.diffPercentage / maxVal) * (H - PAD * 2);
+    return { x, y, p };
+  });
+
+  const linePath = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+
+  const dots = coords.map(c => `<circle class="trend-pt" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3" fill="${c.p.pass ? 'var(--pass)' : 'var(--fail)'}" onclick='jumpToReport("${c.p.id}")'><title>${c.p.diffPercentage}% · ${new Date(c.p.timestamp).toLocaleDateString()}</title></circle>`).join('');
+
+  chartEl.innerHTML = `
+    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <path d="${linePath}" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.6"/>
+      ${dots}
+    </svg>`;
+}
+
+function jumpToReport(id) {
+  // Switch to "all" filter so the point is reachable, then open it
+  if (currentFilter !== 'all') { setFilter('all'); }
+  const report = allReports.find(r => r.id === id);
+  if (!report) return;
+  activeReportId = id;
+  showDetail(report);
+  renderList();
+  document.querySelector(`.report-item.active`)?.scrollIntoView({ block: 'nearest' });
+}
+
+// ─── AUTO-REFRESH ─────────────────────────────────────
+function toggleAutoRefresh() {
+  autoRefreshOn = !autoRefreshOn;
+  const btn = document.getElementById('autoRefreshBtn');
+  if (autoRefreshOn) {
+    btn.classList.add('on');
+    btn.innerHTML = `<div class="dot"></div> Auto-refresh: On (${AUTO_REFRESH_MS / 1000}s)`;
+    autoRefreshTimer = setInterval(silentRefresh, AUTO_REFRESH_MS);
+  } else {
+    btn.classList.remove('on');
+    btn.innerHTML = `<div class="dot"></div> Auto-refresh: Off`;
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+}
+
+// Refresh current test's reports without resetting selection/active report or showing the big overlay
+async function silentRefresh() {
+  if (!currentProject || !currentTest) return;
+  try {
+    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const fresh = await res.json();
+    fresh.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const isNew = fresh.length !== allReports.length;
+    allReports = fresh;
+    applyFilter();
+    renderList();
+
+    if (activeReportId) {
+      const stillThere = allReports.find(r => r.id === activeReportId);
+      if (!stillThere) { activeReportId = null; resetMain(); }
+    }
+    if (isNew) toast('Reports updated', '#4f8ef7');
+  } catch (e) { /* silent fail, no toast spam */ }
+}
+
+// ─── KEYBOARD SHORTCUTS ───────────────────────────────
+document.addEventListener('keydown', (e) => {
+  // Esc closes zoom overlay
+  if (e.key === 'Escape') {
+    if (document.getElementById('zoomOverlay').classList.contains('show')) closeZoom();
+    return;
+  }
+
+  // Don't hijack typing in inputs/selects
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!filteredReports.length) return;
+    let idx = filteredReports.findIndex(r => r.id === activeReportId);
+    idx = e.key === 'ArrowDown' ? Math.min(idx + 1, filteredReports.length - 1) : Math.max(idx - 1, 0);
+    if (idx < 0) idx = 0;
+    const next = filteredReports[idx];
+    activeReportId = next.id;
+    showDetail(next);
+    renderList();
+    document.querySelector('.report-item.active')?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Delete' && activeReportId) {
+    deleteSingle(activeReportId);
+  }
+});
 
 // ─── DELETE ───────────────────────────────────────────
 async function deleteSingle(id) {
