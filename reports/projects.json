@@ -18,7 +18,8 @@
       "TC_09-- Highest price items should display in the image header section",
       "TC_21-- Add Item Button With Grey Background",
       "TC_21--Save banner background",
-      "TC_22--uberone icon and text as gold background"
+      "TC_22--uberone icon and text as gold background",
+      "TC_23--try button background check"
     ]
   }
 ]
