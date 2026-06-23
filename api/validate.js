@@ -85,11 +85,27 @@ module.exports = async (req, res) => {
       ...(currentSha && { sha: currentSha }),
     });
 
-    // 6. Pixel compare
+    // 6. Pixel compare — with anti-aliasing ignore + status bar blackout
     const diff = new PNG({ width, height });
+
+    // Black out status bar region (top 80px) in both images before comparing
+    // This ignores time/battery/signal icon changes completely
+    const STATUS_BAR_HEIGHT = 80;
+    const ignoreHeight = Math.min(STATUS_BAR_HEIGHT, height);
+    for (let y = 0; y < ignoreHeight; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        basePng.data[idx] = basePng.data[idx+1] = basePng.data[idx+2] = 0;
+        currentPng.data[idx] = currentPng.data[idx+1] = currentPng.data[idx+2] = 0;
+      }
+    }
+
     const mismatchedPixels = pixelmatch(
       basePng.data, currentPng.data, diff.data, width, height,
-      { threshold: 0.1 }
+      {
+        threshold: 0.15,   // color sensitivity — slightly relaxed
+        includeAA: false,  // ignore anti-aliased edge pixels (sub-pixel shifts)
+      }
     );
 
     const totalPixels = width * height;
@@ -131,7 +147,23 @@ module.exports = async (req, res) => {
     } catch (e) {
       reports = [];
     }
-
+    if (reports && reports.length > 0) {
+      const lastReport = reports[0]; 
+      const timeDifference = Date.now() - new Date(lastReport.timestamp).getTime();
+      
+      
+      if (lastReport.testName === testName && lastReport.projectName === projectName && !lastReport.pass && timeDifference < 120000) {
+        console.log(`[IGNORE] Testim recheck hit ignored to avoid duplicates for ${testName}`);
+        return res.status(200).json({
+          pass: false,
+          diffPercentage: lastReport.diffPercentage,
+          mismatchedPixels: lastReport.mismatchedPixels,
+          totalPixels: lastReport.totalPixels,
+          reportId: lastReport.id,
+          message: "Ignored duplicate recheck hit. Previous failure already visible."
+        });
+      }
+    }
     // 9. Save report
     const report = {
       id: reportId,

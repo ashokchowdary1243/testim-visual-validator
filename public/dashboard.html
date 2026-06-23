@@ -530,6 +530,26 @@ function getRepoOwner() { return getRepo().split('/')[0]; }
 function getRepoName() { return getRepo().split('/')[1]; }
 function getRawBase() { return `https://raw.githubusercontent.com/${getRepoOwner()}/${getRepoName()}/main/`; }
 
+// Proxy fetch — works for both public and private repos
+async function proxyFetch(filePath) {
+  const api = getApiUrl();
+  const r = await fetch(api + '/api/get-reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filePath })
+  });
+  if (!r.ok) throw new Error('File not found: ' + filePath);
+  return await r.json();
+}
+
+async function proxyFetchImage(imagePath) {
+  const result = await proxyFetch(imagePath);
+  if (result.success && result.base64) {
+    return 'data:image/png;base64,' + result.base64;
+  }
+  throw new Error('Image not found: ' + imagePath);
+}
+
 function saveConfig() {
   localStorage.setItem('vv_api', getApiUrl());
   localStorage.setItem('vv_repo', getRepo());
@@ -564,17 +584,16 @@ async function loadProjects() {
   loading('Loading projects...');
 
   try {
-    const url = getRawBase() + `reports/projects.json?t=${Date.now()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) {
+    let projectsResult;
+    try {
+      projectsResult = await proxyFetch('reports/projects.json');
+    } catch(e) {
       projects = [];
       setStatus('No projects yet', 'var(--warn)');
       loading('', false);
       return;
     }
-
-    projects = await res.json();
+    projects = projectsResult.data || [];
     renderProjectDropdown();
     setStatus(`Connected · ${projects.length} project(s)`, 'var(--pass)');
 
@@ -654,17 +673,14 @@ async function onTestChange() {
   loading('Loading reports...');
 
   try {
-    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      allReports = [];
-      toast('No reports yet for this test', '#f59e0b');
-    } else {
-      allReports = await res.json();
-      // Sort by date newest first
+    try {
+      const result = await proxyFetch(`reports/${currentProject}/${currentTest}/reports.json`);
+      allReports = result.data || [];
       allReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       toast(`Loaded ${allReports.length} report(s)`);
+    } catch(e) {
+      allReports = [];
+      toast('No reports yet for this test', '#f59e0b');
     }
 
     applyFilter();
@@ -854,10 +870,9 @@ function showDetail(report) {
     </div>
   `;
 
-  const base = getRawBase();
-  loadImg('img-base', base + report.baseImagePath);
-  loadImg('img-current', base + report.currentImagePath);
-  if (isFail && report.diffImagePath) loadImg('img-diff', base + report.diffImagePath);
+  loadImgProxy('img-base', report.baseImagePath);
+  loadImgProxy('img-current', report.currentImagePath);
+  if (isFail && report.diffImagePath) loadImgProxy('img-diff', report.diffImagePath);
 }
 
 function loadImg(containerId, url) {
@@ -869,6 +884,23 @@ function loadImg(containerId, url) {
   img.src = url + '?t=' + Date.now();
   img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
   img.onclick = () => zoomImage(img.src);
+}
+
+// Proxy-based image loader — works for private repos
+async function loadImgProxy(containerId, imagePath) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  try {
+    const b64 = await proxyFetchImage(imagePath);
+    const img = new Image();
+    img.onload = () => { c.innerHTML = ''; c.appendChild(img); };
+    img.onerror = () => { c.innerHTML = '<div class="img-err">Failed to load image</div>'; };
+    img.src = b64;
+    img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
+    img.onclick = () => zoomImage(b64);
+  } catch(e) {
+    c.innerHTML = '<div class="img-err">Failed to load image</div>';
+  }
 }
 
 // ─── ZOOM ─────────────────────────────────────────────
@@ -956,10 +988,9 @@ function toggleAutoRefresh() {
 async function silentRefresh() {
   if (!currentProject || !currentTest) return;
   try {
-    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
-    const res = await fetch(url);
-    if (!res.ok) return;
-    const fresh = await res.json();
+    let silentResult;
+    try { silentResult = await proxyFetch(`reports/${currentProject}/${currentTest}/reports.json`); } catch(e) { return; }
+    const fresh = silentResult.data || [];
     fresh.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const isNew = fresh.length !== allReports.length;
@@ -1262,15 +1293,13 @@ async function generatePDF(reports) {
       const imgW = (W - M * 2 - (cols-1)*4) / cols;
 
       const imgs = [
-        // Base image — already cropped when saved, no need to crop again
-        { label: 'BASE IMAGE', path: base + r.baseImagePath, crop: null },
-        // Current image — also already cropped when saved, no need to crop again
-        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, crop: null },
-        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, crop: null }] : [])
+        { label: 'BASE IMAGE', path: base + r.baseImagePath, imgPath: r.baseImagePath, crop: null },
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, imgPath: r.currentImagePath, crop: null },
+        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, imgPath: r.diffImagePath, crop: null }] : [])
       ];
 
       for (let j = 0; j < imgs.length; j++) {
-        const { label, path, crop } = imgs[j];
+        const { label, path, imgPath, crop } = imgs[j];
         const xp = M + j * (imgW + 4);
         const cardH = H - imgY - M;
 
@@ -1281,10 +1310,30 @@ async function generatePDF(reports) {
         pdf.text(label, xp + 3, imgY + 6);
 
         try {
+          // Fetch image — direct from GitHub raw URL
           const rawB64 = await fetchB64(path);
-          // If cropRegion exists, crop using canvas before adding to PDF
-          const imgData = crop ? await cropImageB64(rawB64, crop) : rawB64;
-          pdf.addImage(imgData, 'PNG', xp + 2, imgY + 10, imgW - 4, cardH - 14, '', 'FAST');
+          const imgData = rawB64;
+
+          // Get actual image dimensions — maintain aspect ratio, no skew
+          const imgDims = await getImageDimensions(imgData);
+          const availW = imgW - 4;
+          const availH = cardH - 14;
+          const aspect = imgDims.width / imgDims.height;
+
+          let drawW, drawH;
+          if (aspect > availW / availH) {
+            drawW = availW;
+            drawH = availW / aspect;
+          } else {
+            drawH = availH;
+            drawW = availH * aspect;
+          }
+
+          // Center image in card
+          const drawX = xp + 2 + (availW - drawW) / 2;
+          const drawY = imgY + 10 + (availH - drawH) / 2;
+
+          pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, '', 'FAST');
         } catch (e) {
           pdf.setTextColor(239,68,68); pdf.setFontSize(7);
           pdf.text('Image unavailable', xp + 3, imgY + cardH/2);
@@ -1306,6 +1355,16 @@ async function generatePDF(reports) {
 }
 
 // Crop a base64 image using canvas — returns cropped base64
+// Get actual pixel dimensions of a base64 image
+function getImageDimensions(b64) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(new Error('Failed to load image for dimensions'));
+    img.src = b64;
+  });
+}
+
 async function cropImageB64(b64, crop) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -1323,12 +1382,17 @@ async function cropImageB64(b64, crop) {
 }
 
 async function fetchB64(url) {
-  const r = await fetch(url + '?t=' + Date.now());
+  // Direct fetch from GitHub raw URL
+  const r = await fetch(url.split('?')[0] + '?t=' + Date.now(), {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' }
+  });
+  if (!r.ok) throw new Error('Image fetch failed: ' + r.status);
   const blob = await r.blob();
-  return new Promise((res, rej) => {
+  return new Promise((resolve, reject) => {
     const fr = new FileReader();
-    fr.onload = () => res(fr.result);
-    fr.onerror = rej;
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
     fr.readAsDataURL(blob);
   });
 }
