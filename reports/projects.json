@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Offers",
+    "testNames": [
+      "TC_05--see the canvas card without images"
+    ]
+  }
+]
