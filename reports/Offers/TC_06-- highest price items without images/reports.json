@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_06-- highest price items without images_1782233215976",
+    "testName": "TC_06-- highest price items without images",
+    "projectName": "Offers",
+    "timestamp": "2026-06-23T16:46:55.976Z",
+    "pass": true,
+    "diffPercentage": 0.04,
+    "mismatchedPixels": 1295,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Offers/TC_06-- highest price items without images.png",
+    "currentImagePath": "current-images/Offers/TC_06-- highest price items without images.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.04% diff)"
+  },
+  {
     "id": "TC_06-- highest price items without images_1782232063277",
     "testName": "TC_06-- highest price items without images",
     "projectName": "Offers",
