@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_05--see the canvas card without images_1782211618049",
+    "testName": "TC_05--see the canvas card without images",
+    "projectName": "Offers",
+    "timestamp": "2026-06-23T10:46:58.049Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 164016,
+    "cropRegion": {
+      "x": 0,
+      "y": 1460,
+      "width": 1206,
+      "height": 136
+    },
+    "baseImagePath": "base-images/Offers/TC_05--see the canvas card without images.png",
+    "currentImagePath": "current-images/Offers/TC_05--see the canvas card without images.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
