@@ -15,7 +15,8 @@
       "TC_19_Black Background",
       "TC_06-- highest price items without images",
       "TC_06--see the canvas card without images",
-      "TC_09-- Highest price items should display in the image header section"
+      "TC_09-- Highest price items should display in the image header section",
+      "TC_21-- Add Item Button With Grey Background"
     ]
   }
 ]
