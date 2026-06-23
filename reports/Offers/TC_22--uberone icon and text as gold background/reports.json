@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_22--uberone icon and text as gold background_1782245807150",
+    "testName": "TC_22--uberone icon and text as gold background",
+    "projectName": "Offers",
+    "timestamp": "2026-06-23T20:16:47.150Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 115560,
+    "cropRegion": {
+      "x": 192,
+      "y": 2028,
+      "width": 963,
+      "height": 120
+    },
+    "baseImagePath": "base-images/Offers/TC_22--uberone icon and text as gold background.png",
+    "currentImagePath": "current-images/Offers/TC_22--uberone icon and text as gold background.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
