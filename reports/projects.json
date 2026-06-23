@@ -2,7 +2,8 @@
   {
     "name": "3P_iFood",
     "testNames": [
-      "TC_02"
+      "TC_02",
+      "TC_02_iFood"
     ]
   }
 ]
