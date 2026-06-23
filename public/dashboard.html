@@ -492,6 +492,10 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
 </div>
 
 <script>
+// ─── HARDCODED CONFIG ────────────────────────────────
+document.getElementById('apiUrl').value = 'https://testim-visual-validator-new.vercel.app';
+document.getElementById('repoPath').value = 'ashokchowdary1243/testim-visual-validator';
+
 // ─── STATE ───────────────────────────────────────────
 let projects = [];
 let allReports = [];
@@ -513,10 +517,8 @@ window.addEventListener('load', () => {
   const savedRepo = localStorage.getItem('vv_repo');
   if (savedApi) document.getElementById('apiUrl').value = savedApi;
   if (savedRepo) document.getElementById('repoPath').value = savedRepo;
-
-  if (savedApi && savedRepo) {
-    autoInit();
-  }
+  // Always init — hardcoded values already set above
+  autoInit();
 });
 
 async function autoInit() {
@@ -529,26 +531,6 @@ function getRepo() { return document.getElementById('repoPath').value.trim(); }
 function getRepoOwner() { return getRepo().split('/')[0]; }
 function getRepoName() { return getRepo().split('/')[1]; }
 function getRawBase() { return `https://raw.githubusercontent.com/${getRepoOwner()}/${getRepoName()}/main/`; }
-
-// Proxy fetch — works for both public and private repos
-async function proxyFetch(filePath) {
-  const api = getApiUrl();
-  const r = await fetch(api + '/api/get-reports', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filePath })
-  });
-  if (!r.ok) throw new Error('File not found: ' + filePath);
-  return await r.json();
-}
-
-async function proxyFetchImage(imagePath) {
-  const result = await proxyFetch(imagePath);
-  if (result.success && result.base64) {
-    return 'data:image/png;base64,' + result.base64;
-  }
-  throw new Error('Image not found: ' + imagePath);
-}
 
 function saveConfig() {
   localStorage.setItem('vv_api', getApiUrl());
@@ -584,16 +566,17 @@ async function loadProjects() {
   loading('Loading projects...');
 
   try {
-    let projectsResult;
-    try {
-      projectsResult = await proxyFetch('reports/projects.json');
-    } catch(e) {
+    const url = getRawBase() + `reports/projects.json?t=${Date.now()}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
       projects = [];
       setStatus('No projects yet', 'var(--warn)');
       loading('', false);
       return;
     }
-    projects = projectsResult.data || [];
+
+    projects = await res.json();
     renderProjectDropdown();
     setStatus(`Connected · ${projects.length} project(s)`, 'var(--pass)');
 
@@ -673,14 +656,17 @@ async function onTestChange() {
   loading('Loading reports...');
 
   try {
-    try {
-      const result = await proxyFetch(`reports/${currentProject}/${currentTest}/reports.json`);
-      allReports = result.data || [];
-      allReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      toast(`Loaded ${allReports.length} report(s)`);
-    } catch(e) {
+    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
       allReports = [];
       toast('No reports yet for this test', '#f59e0b');
+    } else {
+      allReports = await res.json();
+      // Sort by date newest first
+      allReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      toast(`Loaded ${allReports.length} report(s)`);
     }
 
     applyFilter();
@@ -870,9 +856,10 @@ function showDetail(report) {
     </div>
   `;
 
-  loadImgProxy('img-base', report.baseImagePath);
-  loadImgProxy('img-current', report.currentImagePath);
-  if (isFail && report.diffImagePath) loadImgProxy('img-diff', report.diffImagePath);
+  const base = getRawBase();
+  loadImg('img-base', base + report.baseImagePath);
+  loadImg('img-current', base + report.currentImagePath);
+  if (isFail && report.diffImagePath) loadImg('img-diff', base + report.diffImagePath);
 }
 
 function loadImg(containerId, url) {
@@ -884,23 +871,6 @@ function loadImg(containerId, url) {
   img.src = url + '?t=' + Date.now();
   img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
   img.onclick = () => zoomImage(img.src);
-}
-
-// Proxy-based image loader — works for private repos
-async function loadImgProxy(containerId, imagePath) {
-  const c = document.getElementById(containerId);
-  if (!c) return;
-  try {
-    const b64 = await proxyFetchImage(imagePath);
-    const img = new Image();
-    img.onload = () => { c.innerHTML = ''; c.appendChild(img); };
-    img.onerror = () => { c.innerHTML = '<div class="img-err">Failed to load image</div>'; };
-    img.src = b64;
-    img.style.cssText = 'max-width:100%;max-height:420px;object-fit:contain;border-radius:4px;';
-    img.onclick = () => zoomImage(b64);
-  } catch(e) {
-    c.innerHTML = '<div class="img-err">Failed to load image</div>';
-  }
 }
 
 // ─── ZOOM ─────────────────────────────────────────────
@@ -988,9 +958,10 @@ function toggleAutoRefresh() {
 async function silentRefresh() {
   if (!currentProject || !currentTest) return;
   try {
-    let silentResult;
-    try { silentResult = await proxyFetch(`reports/${currentProject}/${currentTest}/reports.json`); } catch(e) { return; }
-    const fresh = silentResult.data || [];
+    const url = getRawBase() + `reports/${currentProject}/${currentTest}/reports.json?t=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const fresh = await res.json();
     fresh.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const isNew = fresh.length !== allReports.length;
@@ -1224,49 +1195,42 @@ async function generatePDF(reports) {
     for (let i = 0; i < reports.length; i++) {
       const r = reports[i];
       if (i > 0) pdf.addPage();
-
       const base = getRawBase();
       const isFail = !r.pass;
 
-      // Background
+      // ── Background
       pdf.setFillColor(13, 17, 23);
       pdf.rect(0, 0, W, H, 'F');
 
-      // Header bar
+      // ── Header bar
       pdf.setFillColor(22, 27, 39);
       pdf.rect(0, 0, W, 24, 'F');
 
-      // Title
+      // ── Title
       pdf.setTextColor(79, 142, 247);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14); pdf.setFont('helvetica', 'bold');
       pdf.text('Visual Validator Report', M, 10);
 
-      // Project / test
+      // ── Project / test / date
       pdf.setTextColor(107, 122, 153);
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
       pdf.text(`${r.projectName} / ${r.testName}`, M, 16);
       pdf.text(new Date(r.timestamp).toLocaleString(), M, 21);
 
-      // Crop region info (if any)
+      // ── Crop info
       if (r.cropRegion) {
         const cr = r.cropRegion;
-        pdf.setTextColor(79, 142, 247);
-        pdf.setFontSize(6.5);
+        pdf.setTextColor(79, 142, 247); pdf.setFontSize(6.5);
         pdf.text(`Crop: x=${cr.x} y=${cr.y} w=${cr.width} h=${cr.height}`, W - M, 21, { align: 'right' });
       }
 
-      // Status badge
-      const sc = r.pass ? [34,197,94] : [239,68,68];
-      pdf.setFillColor(...sc);
+      // ── Status badge
+      pdf.setFillColor(...(r.pass ? [34,197,94] : [239,68,68]));
       pdf.roundedRect(W - M - 20, 7, 18, 9, 2, 2, 'F');
-      pdf.setTextColor(255,255,255);
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255,255,255); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
       pdf.text(r.pass ? 'PASS' : 'FAIL', W - M - 11, 12.5, { align: 'center' });
 
-      // Stats row
+      // ── Stats row
       pdf.setFillColor(28, 35, 51);
       pdf.rect(0, 24, W, 14, 'F');
       const stats = [
@@ -1277,70 +1241,64 @@ async function generatePDF(reports) {
       ];
       let sx = M;
       stats.forEach(([label, val]) => {
+        const isResult = label === 'RESULT';
+        const isDiff = label === 'DIFF %';
+        const color = (isResult || isDiff) ? (r.pass ? [34,197,94] : [239,68,68]) : [226,232,240];
         pdf.setTextColor(107,122,153); pdf.setFontSize(6); pdf.setFont('helvetica','normal');
         pdf.text(label, sx, 29);
-        pdf.setTextColor(r.pass && label==='DIFF %' ? 34 : label==='RESULT' ? (r.pass?34:239) : 226,
-          r.pass && label==='DIFF %' ? 197 : label==='RESULT' ? (r.pass?197:68) : 232,
-          r.pass && label==='DIFF %' ? 94 : label==='RESULT' ? (r.pass?94:68) : 240);
-        pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+        pdf.setTextColor(...color); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
         pdf.text(val, sx, 35);
         sx += 48;
       });
 
-      // Images
+      // ── Images section
       const imgY = 42;
       const cols = isFail ? 3 : 2;
-      const imgW = (W - M * 2 - (cols-1)*4) / cols;
+      const imgW = (W - M * 2 - (cols - 1) * 4) / cols;
+      const cardH = H - imgY - M;
 
-      const imgs = [
-        { label: 'BASE IMAGE', path: base + r.baseImagePath, imgPath: r.baseImagePath, crop: null },
-        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath, imgPath: r.currentImagePath, crop: null },
-        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath, imgPath: r.diffImagePath, crop: null }] : [])
+      const imgList = [
+        { label: 'BASE IMAGE',         path: base + r.baseImagePath },
+        { label: 'CURRENT SCREENSHOT', path: base + r.currentImagePath },
+        ...(isFail && r.diffImagePath ? [{ label: 'DIFF (MISMATCHED)', path: base + r.diffImagePath }] : [])
       ];
 
-      for (let j = 0; j < imgs.length; j++) {
-        const { label, path, imgPath, crop } = imgs[j];
+      for (let j = 0; j < imgList.length; j++) {
+        const { label, path } = imgList[j];
         const xp = M + j * (imgW + 4);
-        const cardH = H - imgY - M;
 
-        pdf.setFillColor(28,35,51);
+        // Card background
+        pdf.setFillColor(28, 35, 51);
         pdf.roundedRect(xp, imgY, imgW, cardH, 2, 2, 'F');
 
+        // Label
         pdf.setTextColor(107,122,153); pdf.setFontSize(7); pdf.setFont('helvetica','bold');
         pdf.text(label, xp + 3, imgY + 6);
 
         try {
-          // Fetch image — direct from GitHub raw URL
-          const rawB64 = await fetchB64(path);
-          const imgData = rawB64;
-
-          // Get actual image dimensions — maintain aspect ratio, no skew
-          const imgDims = await getImageDimensions(imgData);
+          const imgData = await fetchB64ForPDF(path);
+          // Get real dimensions → maintain aspect ratio (no stretch/skew)
+          const dims = await getImgDims(imgData);
           const availW = imgW - 4;
-          const availH = cardH - 14;
-          const aspect = imgDims.width / imgDims.height;
-
-          let drawW, drawH;
+          const availH = cardH - 12;
+          const aspect = dims.w / dims.h;
+          let dw, dh;
           if (aspect > availW / availH) {
-            drawW = availW;
-            drawH = availW / aspect;
+            dw = availW; dh = availW / aspect;
           } else {
-            drawH = availH;
-            drawW = availH * aspect;
+            dh = availH; dw = availH * aspect;
           }
-
-          // Center image in card
-          const drawX = xp + 2 + (availW - drawW) / 2;
-          const drawY = imgY + 10 + (availH - drawH) / 2;
-
-          pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, '', 'FAST');
+          // Center in card
+          const dx = xp + 2 + (availW - dw) / 2;
+          const dy = imgY + 8 + (availH - dh) / 2;
+          pdf.addImage(imgData, 'PNG', dx, dy, dw, dh, '', 'FAST');
         } catch (e) {
           pdf.setTextColor(239,68,68); pdf.setFontSize(7);
-          pdf.text('Image unavailable', xp + 3, imgY + cardH/2);
+          pdf.text('Image unavailable', xp + 3, imgY + cardH / 2);
         }
       }
 
-      // Footer
+      // ── Footer
       pdf.setTextColor(42,48,68); pdf.setFontSize(7); pdf.setFont('helvetica','normal');
       pdf.text(`Visual Validator  ·  Page ${i+1} of ${reports.length}  ·  ${r.id}`, W/2, H-5, { align: 'center' });
     }
@@ -1354,46 +1312,70 @@ async function generatePDF(reports) {
   }
 }
 
-// Crop a base64 image using canvas — returns cropped base64
-// Get actual pixel dimensions of a base64 image
-function getImageDimensions(b64) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error('Failed to load image for dimensions'));
-    img.src = b64;
-  });
+// Fetch image from GitHub raw URL → base64 for PDF
+async function fetchB64ForPDF(url) {
+  // Try direct fetch first (works if GitHub raw is accessible)
+  try {
+    const r = await fetch(url.split('?')[0] + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('status ' + r.status);
+    const blob = await r.blob();
+    return await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(blob);
+    });
+  } catch (e) {
+    // Fallback: use already-loaded DOM image if available
+    const allImgs = document.querySelectorAll('.img-card-body img');
+    for (const img of allImgs) {
+      if (img.src && img.complete && img.naturalWidth > 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          return canvas.toDataURL('image/png');
+        } catch (_) {}
+      }
+    }
+    throw new Error('Image fetch failed: ' + e.message);
+  }
 }
 
-async function cropImageB64(b64, crop) {
-  return new Promise((resolve, reject) => {
+// Get natural dimensions of a base64 image
+function getImgDims(b64) {
+  return new Promise((res, rej) => {
     const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = crop.width;
-      canvas.height = crop.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = reject;
+    img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = rej;
     img.src = b64;
   });
 }
 
 async function fetchB64(url) {
-  // Direct fetch from GitHub raw URL
-  const r = await fetch(url.split('?')[0] + '?t=' + Date.now(), {
-    cache: 'no-store',
-    headers: { 'Cache-Control': 'no-cache' }
-  });
-  if (!r.ok) throw new Error('Image fetch failed: ' + r.status);
+  const r = await fetch(url + '?t=' + Date.now());
   const blob = await r.blob();
-  return new Promise((resolve, reject) => {
+  return new Promise((res, rej) => {
     const fr = new FileReader();
-    fr.onload = () => resolve(fr.result);
-    fr.onerror = reject;
+    fr.onload = () => res(fr.result);
+    fr.onerror = rej;
     fr.readAsDataURL(blob);
+  });
+}
+
+// Crop a base64 image using canvas
+async function cropImageB64(b64, crop) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = crop.width; canvas.height = crop.height;
+      canvas.getContext('2d').drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = b64;
   });
 }
 
@@ -1451,10 +1433,6 @@ async function confirmDeleteProject() {
     loading('', false);
   }
 }
-
-// Auto-reload when config changes
-document.getElementById('apiUrl').value = 'https://testim-visual-validator-new.vercel.app';
-document.getElementById('repoPath').value = 'ashokchowdary1243/testim-visual-validator';
 
 const savedTheme = localStorage.getItem('vv_theme');
 const validThemes = ['midnight','light'];

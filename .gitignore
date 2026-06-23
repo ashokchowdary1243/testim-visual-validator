@@ -1,2 +1,5 @@
 node_modules/
 .vercel/
+diff-images/
+reports/
+current-images/
