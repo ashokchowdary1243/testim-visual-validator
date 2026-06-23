@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_23--try button background check_1782245892055",
+    "testName": "TC_23--try button background check",
+    "projectName": "Offers",
+    "timestamp": "2026-06-23T20:18:12.055Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 186480,
+    "cropRegion": {
+      "x": 48,
+      "y": 2352,
+      "width": 1110,
+      "height": 168
+    },
+    "baseImagePath": "base-images/Offers/TC_23--try button background check.png",
+    "currentImagePath": "current-images/Offers/TC_23--try button background check.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
