@@ -20,7 +20,8 @@
       "TC_21--Save banner background",
       "TC_22--uberone icon and text as gold background",
       "TC_23--try button background check",
-      "TC_25 delete buttion change"
+      "TC_25 delete buttion change",
+      "TC_29-- note save button"
     ]
   }
 ]
