@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_19_Black Background_1782265947361",
+    "testName": "TC_19_Black Background",
+    "projectName": "Offers",
+    "timestamp": "2026-06-24T01:52:27.359Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 298764,
+    "cropRegion": {
+      "x": 48,
+      "y": 2256,
+      "width": 1158,
+      "height": 258
+    },
+    "baseImagePath": "base-images/Offers/TC_19_Black Background.png",
+    "currentImagePath": "current-images/Offers/TC_19_Black Background.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_19_Black Background_1782263952461",
     "testName": "TC_19_Black Background",
     "projectName": "Offers",
