@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_03_iFood_1782286649301",
+    "testName": "TC_03_iFood",
+    "projectName": "3P_iFood",
+    "timestamp": "2026-06-24T07:37:29.301Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 142560,
+    "cropRegion": {
+      "x": 0,
+      "y": 204,
+      "width": 990,
+      "height": 144
+    },
+    "baseImagePath": "base-images/3P_iFood/TC_03_iFood.png",
+    "currentImagePath": "current-images/3P_iFood/TC_03_iFood.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_03_iFood_1782285867991",
     "testName": "TC_03_iFood",
     "projectName": "3P_iFood",
