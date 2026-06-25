@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "name": "3P_iFood_Android",
+    "testNames": [
+      "TC_2"
+    ]
+  }
+]
