@@ -3,7 +3,8 @@
     "name": "3P_iFood_Android",
     "testNames": [
       "TC_2",
-      "TC_3"
+      "TC_3",
+      "TC_21"
     ]
   }
 ]
