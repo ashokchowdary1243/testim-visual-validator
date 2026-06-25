@@ -1,17 +1,5 @@
 [
   {
-    "name": "3P_iFood",
-    "testNames": [
-      "TC_02",
-      "TC_02_iFood",
-      "TC_03_iFood",
-      "TC_22_iFood",
-      "TC_23_iFood",
-      "TC_01_iFood",
-      "TC_8_iFood"
-    ]
-  },
-  {
     "name": "Offers",
     "testNames": [
       "TC_05-- one highest item with image and another highest item without image",
