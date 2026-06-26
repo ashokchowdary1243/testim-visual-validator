@@ -21,7 +21,8 @@
     "testNames": [
       "TC_11--Uncheck_Validate",
       "TC_12--Check Box and Agree Button Validtion",
-      "TC_12-Review all text on consent screen"
+      "TC_12-Review all text on consent screen",
+      "TC_10-Compare layout and content"
     ]
   }
 ]
