@@ -34,7 +34,8 @@
   {
     "name": "3P_iFood_iOS",
     "testNames": [
-      "TC_03_iFood"
+      "TC_03_iFood",
+      "TC_01_iFood"
     ]
   }
 ]
