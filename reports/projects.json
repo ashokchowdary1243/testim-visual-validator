@@ -27,12 +27,6 @@
     ]
   },
   {
-    "name": "3P_iFood-iOS",
-    "testNames": [
-      "TC_02_iFood"
-    ]
-  },
-  {
     "name": "3P_iFood_iOS",
     "testNames": [
       "TC_03_iFood",
