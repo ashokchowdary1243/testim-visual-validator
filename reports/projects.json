@@ -24,5 +24,11 @@
       "TC_12-Review all text on consent screen",
       "TC_10-Compare layout and content"
     ]
+  },
+  {
+    "name": "3P_iFood-iOS",
+    "testNames": [
+      "TC_02_iFood"
+    ]
   }
 ]
