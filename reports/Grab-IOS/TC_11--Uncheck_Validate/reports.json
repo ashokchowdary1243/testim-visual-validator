@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_11--Uncheck_Validate_1782477097100",
+    "testName": "TC_11--Uncheck_Validate",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-26T12:31:37.099Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 3600,
+    "cropRegion": {
+      "x": 66,
+      "y": 2161,
+      "width": 60,
+      "height": 60
+    },
+    "baseImagePath": "base-images/Grab-IOS/TC_11--Uncheck_Validate.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_11--Uncheck_Validate.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_11--Uncheck_Validate_1782477053737",
     "testName": "TC_11--Uncheck_Validate",
     "projectName": "Grab-IOS",
