@@ -12,7 +12,8 @@
     "name": "Grab-IOS",
     "testNames": [
       "TC_11--Uncheck_Validate",
-      "TC_12--check_Validate"
+      "TC_12--check_Validate",
+      "TC_10--Consent screen renders correctly on both iOS and Android"
     ]
   },
   {
