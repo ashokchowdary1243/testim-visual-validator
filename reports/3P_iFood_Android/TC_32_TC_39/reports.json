@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_32_TC_39_1782539915740",
+    "testName": "TC_32_TC_39",
+    "projectName": "3P_iFood_Android",
+    "timestamp": "2026-06-27T05:58:35.736Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 172800,
+    "cropRegion": {
+      "x": 0,
+      "y": 575,
+      "width": 1080,
+      "height": 160
+    },
+    "baseImagePath": "base-images/3P_iFood_Android/TC_32_TC_39.png",
+    "currentImagePath": "current-images/3P_iFood_Android/TC_32_TC_39.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
