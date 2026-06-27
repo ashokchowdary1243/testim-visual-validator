@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_05--standard Uber Rider homescreen shown_1782537222373",
+    "testName": "TC_05--standard Uber Rider homescreen shown",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-27T05:13:42.373Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 1031400,
+    "cropRegion": {
+      "x": 0,
+      "y": 0,
+      "width": 1080,
+      "height": 955
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_05--standard Uber Rider homescreen shown.png",
+    "currentImagePath": "current-images/Grab-Android/TC_05--standard Uber Rider homescreen shown.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_05--standard Uber Rider homescreen shown_1782536975488",
     "testName": "TC_05--standard Uber Rider homescreen shown",
     "projectName": "Grab-Android",
