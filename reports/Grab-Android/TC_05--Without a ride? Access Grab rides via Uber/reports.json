@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_05--Without a ride? Access Grab rides via Uber_1782540155920",
+    "testName": "TC_05--Without a ride? Access Grab rides via Uber",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-27T06:02:35.920Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 418320,
+    "cropRegion": {
+      "x": 42,
+      "y": 636,
+      "width": 996,
+      "height": 420
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_05--Without a ride? Access Grab rides via Uber.png",
+    "currentImagePath": "current-images/Grab-Android/TC_05--Without a ride? Access Grab rides via Uber.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
