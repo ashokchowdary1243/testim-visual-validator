@@ -40,7 +40,8 @@
       "TC_05--Without a ride? Access Grab rides via Uber",
       "TC_11--Uncheck_CheckBox_Validation",
       "TC_12--Check Box and Agree Button Validation",
-      "TC_23--Grab home Screen"
+      "TC_23--Grab home Screen",
+      "TC_07(i)-Ring banner visible"
     ]
   },
   {
