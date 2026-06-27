@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_12--Check Box and Agree Button Validtion_1782543580119",
+    "testName": "TC_12--Check Box and Agree Button Validtion",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-27T06:59:40.119Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 504360,
+    "cropRegion": {
+      "x": 0,
+      "y": 1831,
+      "width": 1080,
+      "height": 467
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_12--Check Box and Agree Button Validtion.png",
+    "currentImagePath": "current-images/Grab-Android/TC_12--Check Box and Agree Button Validtion.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_12--Check Box and Agree Button Validtion_1782484866206",
     "testName": "TC_12--Check Box and Agree Button Validtion",
     "projectName": "Grab-Android",
