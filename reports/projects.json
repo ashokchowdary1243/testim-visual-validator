@@ -44,7 +44,8 @@
       "TC_23--Grab home Screen",
       "TC_07(i)-Ring banner visible",
       "TC_07-standard homescreen displayed",
-      "TC_08-FTUX should be seen(1)"
+      "TC_08-FTUX should be seen(1)",
+      "TC_26-Ring banner visible"
     ]
   },
   {
