@@ -31,7 +31,8 @@
       "TC_09-Review all text on consent screen",
       "TC_05--standard Uber Rider homescreen shown",
       "TC_05--Without a ride? Access Grab rides via Uber",
-      "TC_11--Uncheck_CheckBox_Validation"
+      "TC_11--Uncheck_CheckBox_Validation",
+      "TC_12--Check Box and Agree Button Validation"
     ]
   },
   {
