@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_08-FTUX should be seen(1)_1782574331522",
+    "testName": "TC_08-FTUX should be seen(1)",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-27T15:32:11.520Z",
+    "pass": true,
+    "diffPercentage": 0.02,
+    "mismatchedPixels": 437,
+    "totalPixels": 2617920,
+    "cropRegion": {
+      "x": 0,
+      "y": 0,
+      "width": 1080,
+      "height": 2424
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_08-FTUX should be seen(1).png",
+    "currentImagePath": "current-images/Grab-Android/TC_08-FTUX should be seen(1).png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.02% diff)"
+  },
+  {
     "id": "TC_08-FTUX should be seen(1)_1782573722290",
     "testName": "TC_08-FTUX should be seen(1)",
     "projectName": "Grab-Android",
