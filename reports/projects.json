@@ -20,7 +20,8 @@
       "TC_11--Uncheck_Validate",
       "TC_12--check_Validate",
       "TC_10--Consent screen renders correctly on both iOS and Android",
-      "TC_22--Dark theme"
+      "TC_22--Dark theme",
+      "TC_23--Grab home Screen"
     ]
   },
   {
