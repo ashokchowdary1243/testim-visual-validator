@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_22--Dark theme_1782579411244",
+    "testName": "TC_22--Dark theme",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-27T16:56:51.242Z",
+    "pass": false,
+    "diffPercentage": 0.61,
+    "mismatchedPixels": 19166,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_22--Dark theme.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_22--Dark theme.png",
+    "diffImagePath": "diff-images/Grab-IOS/TC_22--Dark theme/TC_22--Dark theme_1782579411244.png",
+    "message": "FAIL - 0.61% difference detected!"
+  },
+  {
     "id": "TC_22--Dark theme_1782564394959",
     "testName": "TC_22--Dark theme",
     "projectName": "Grab-IOS",
