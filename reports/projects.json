@@ -28,7 +28,8 @@
       "TC_12-Review all text on consent screen",
       "TC_10-Compare layout and content",
       "TC_09-Review all text on consent screen",
-      "TC_05--standard Uber Rider homescreen shown"
+      "TC_05--standard Uber Rider homescreen shown",
+      "TC_05--Without a ride? Access Grab rides via Uber"
     ]
   },
   {
