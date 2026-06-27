@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC_23--Grab home Screen_1782552280125",
+    "testName": "TC_23--Grab home Screen",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-27T09:24:40.125Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 2617920,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-Android/TC_23--Grab home Screen.png",
+    "currentImagePath": "current-images/Grab-Android/TC_23--Grab home Screen.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
