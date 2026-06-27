@@ -42,7 +42,8 @@
       "TC_12--Check Box and Agree Button Validation",
       "TC_23--Grab home Screen",
       "TC_07(i)-Ring banner visible",
-      "TC_07-standard homescreen displayed"
+      "TC_07-standard homescreen displayed",
+      "TC_08-FTUX should be seen(1)"
     ]
   },
   {
