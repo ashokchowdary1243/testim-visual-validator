@@ -88,5 +88,11 @@
       "TC_37_iFood",
       "TC_37.1_iFood"
     ]
+  },
+  {
+    "name": "Grab-iOS",
+    "testNames": [
+      "TC_Splash--Taking you to Grab"
+    ]
   }
 ]
