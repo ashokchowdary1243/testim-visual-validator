@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_Splash--Taking you to Grab_1782678912159",
+    "testName": "TC_Splash--Taking you to Grab",
+    "projectName": "Grab-iOS",
+    "timestamp": "2026-06-28T20:35:12.159Z",
+    "pass": false,
+    "diffPercentage": 84.41,
+    "mismatchedPixels": 2669300,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-iOS/TC_Splash--Taking you to Grab.png",
+    "currentImagePath": "current-images/Grab-iOS/TC_Splash--Taking you to Grab.png",
+    "diffImagePath": "diff-images/Grab-iOS/TC_Splash--Taking you to Grab/TC_Splash--Taking you to Grab_1782678912159.png",
+    "message": "FAIL - 84.41% difference detected!"
+  },
+  {
     "id": "TC_Splash--Taking you to Grab_1782678903133",
     "testName": "TC_Splash--Taking you to Grab",
     "projectName": "Grab-iOS",
