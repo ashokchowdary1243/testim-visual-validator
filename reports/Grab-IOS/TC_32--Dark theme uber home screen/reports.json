@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_32--Dark theme uber home screen_1782622531252",
+    "testName": "TC_32--Dark theme uber home screen",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T04:55:31.247Z",
+    "pass": true,
+    "diffPercentage": 0.03,
+    "mismatchedPixels": 1076,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_32--Dark theme uber home screen.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_32--Dark theme uber home screen.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.03% diff)"
+  },
+  {
     "id": "TC_32--Dark theme uber home screen_1782621511839",
     "testName": "TC_32--Dark theme uber home screen",
     "projectName": "Grab-IOS",
