@@ -320,13 +320,60 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
 .del-proj-modal.show { display: flex; }
 .del-proj-box {
   background: var(--card); border: 1px solid var(--fail);
-  border-radius: 12px; padding: 24px 28px; width: 360px; max-width: 92vw;
+  border-radius: 12px; padding: 24px 28px; width: 380px; max-width: 92vw;
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
 .del-proj-box h3 { font-size: 15px; font-weight: 700; color: var(--fail); margin-bottom: 10px; }
-.del-proj-box p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+.del-proj-box p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
 .del-proj-box strong { color: var(--text); }
 .del-proj-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.del-proj-pw-row { margin-bottom: 16px; }
+.del-proj-pw-row label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 5px; }
+.del-proj-pw-row input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 7px 11px; border-radius: 6px; font-size: 13px; letter-spacing: 3px; }
+.del-proj-pw-row input:focus { outline: none; border-color: var(--fail); }
+.del-proj-pw-err { font-size: 11px; color: var(--fail); margin-top: 4px; display: none; }
+
+/* Global Search */
+.search-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1300;
+  display: none; align-items: flex-start; justify-content: center;
+  padding-top: 80px; backdrop-filter: blur(4px);
+}
+.search-overlay.show { display: flex; }
+.search-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; width: 560px; max-width: 94vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden;
+}
+.search-inp-row {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.search-inp-row svg { flex-shrink: 0; color: var(--muted); }
+.search-inp-row input {
+  flex: 1; background: none; border: none; color: var(--text); font-size: 15px; outline: none;
+}
+.search-inp-row input::placeholder { color: var(--muted); }
+.search-inp-row kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 10px; color: var(--muted); flex-shrink: 0; }
+.search-results { max-height: 380px; overflow-y: auto; }
+.search-results::-webkit-scrollbar { width: 3px; }
+.search-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.search-group-label { padding: 8px 16px 4px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.search-result-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  cursor: pointer; transition: background 0.1s;
+}
+.search-result-item:hover, .search-result-item.highlighted { background: var(--hover); }
+.search-result-item .sri-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.search-result-item .sri-name { font-size: 13px; font-weight: 600; flex: 1; }
+.search-result-item .sri-sub { font-size: 11px; color: var(--muted); }
+.search-result-item .sri-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+.badge-pass { background: rgba(34,197,94,0.15); color: var(--pass); }
+.badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+.badge-proj { background: rgba(79,142,247,0.15); color: var(--accent); }
+.search-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+.search-footer { padding: 8px 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; font-size: 10px; color: var(--muted); }
+.search-footer kbd { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-size: 9px; }
 </style>
 </head>
 <body>
@@ -358,6 +405,10 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
     <button class="btn btn-refresh" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Auto-refresh reports">
       <div class="dot"></div>
       Auto-refresh: Off
+    </button>
+    <button class="btn btn-ghost" onclick="openSearch()" title="Search tests across all projects (Ctrl+K)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
     </button>
     <button class="btn btn-ghost" onclick="openCleanupModal()" title="Find & remove orphan images">
       🧹 Cleanup
@@ -471,6 +522,11 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
     <h3>⚠️ Delete Project</h3>
     <p>Are you sure you want to delete project <strong id="delProjName"></strong>?<br><br>
     This will permanently delete <strong>ALL tests, reports, and images</strong> for this project. This action cannot be undone!</p>
+    <div class="del-proj-pw-row">
+      <label>Enter password to confirm deletion:</label>
+      <input type="password" id="delProjPw" placeholder="••••" onkeydown="if(event.key==='Enter') confirmDeleteProject()" oninput="document.getElementById('delProjPwErr').style.display='none'" />
+      <div class="del-proj-pw-err" id="delProjPwErr">❌ Incorrect password</div>
+    </div>
     <div class="del-proj-actions">
       <button class="btn btn-ghost" onclick="closeDeleteProjectModal()">Cancel</button>
       <button class="btn btn-danger" onclick="confirmDeleteProject()">
@@ -479,6 +535,25 @@ body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); c
         </svg>
         Yes, Delete Project
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH OVERLAY -->
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOnBg(event)">
+  <div class="search-box">
+    <div class="search-inp-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInp" placeholder="Search test name across all projects…" oninput="renderSearchResults()" onkeydown="handleSearchKey(event)" autocomplete="off" />
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">Start typing to search tests…</div>
+    </div>
+    <div class="search-footer">
+      <span><kbd>↑↓</kbd> navigate</span>
+      <span><kbd>Enter</kbd> select</span>
+      <span><kbd>Esc</kbd> close</span>
     </div>
   </div>
 </div>
@@ -979,10 +1054,19 @@ async function silentRefresh() {
 
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────
 document.addEventListener('keydown', (e) => {
-  // Esc closes zoom overlay or cleanup modal
+  // Ctrl+K → open search
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    openSearch();
+    return;
+  }
+
+  // Esc closes overlays
   if (e.key === 'Escape') {
-    if (document.getElementById('zoomOverlay').classList.contains('show')) closeZoom();
-    if (document.getElementById('cleanupModal').classList.contains('show')) closeCleanupModal();
+    if (document.getElementById('searchOverlay').classList.contains('show')) { closeSearch(); return; }
+    if (document.getElementById('zoomOverlay').classList.contains('show')) { closeZoom(); return; }
+    if (document.getElementById('cleanupModal').classList.contains('show')) { closeCleanupModal(); return; }
+    if (document.getElementById('delProjModal').classList.contains('show')) { closeDeleteProjectModal(); return; }
     return;
   }
 
@@ -1005,6 +1089,119 @@ document.addEventListener('keydown', (e) => {
     deleteSingle(activeReportId);
   }
 });
+
+// ─── GLOBAL SEARCH ────────────────────────────────────
+let searchHlIdx = -1;
+
+function openSearch() {
+  document.getElementById('searchOverlay').classList.add('show');
+  document.getElementById('searchInp').value = '';
+  searchHlIdx = -1;
+  renderSearchResults();
+  setTimeout(() => document.getElementById('searchInp').focus(), 50);
+}
+
+function closeSearch() {
+  document.getElementById('searchOverlay').classList.remove('show');
+}
+
+function closeSearchOnBg(e) {
+  if (e.target === document.getElementById('searchOverlay')) closeSearch();
+}
+
+function renderSearchResults() {
+  const q = document.getElementById('searchInp').value.trim().toLowerCase();
+  const container = document.getElementById('searchResults');
+  searchHlIdx = -1;
+
+  if (!projects.length) {
+    container.innerHTML = '<div class="search-empty">No projects loaded yet</div>';
+    return;
+  }
+
+  // Build results: match project names and test names
+  let html = '';
+  let totalResults = 0;
+
+  projects.forEach(proj => {
+    const projMatch = !q || proj.name.toLowerCase().includes(q);
+    const matchingTests = (proj.testNames || []).filter(t => !q || t.toLowerCase().includes(q) || proj.name.toLowerCase().includes(q));
+
+    if (!matchingTests.length && !projMatch) return;
+
+    const testsToShow = q ? matchingTests : (proj.testNames || []);
+    if (!testsToShow.length) return;
+
+    html += `<div class="search-group-label">📁 ${proj.name}</div>`;
+    testsToShow.forEach(testName => {
+      html += `<div class="search-result-item" onclick="searchSelect('${proj.name}','${testName}')" data-proj="${proj.name}" data-test="${testName}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span class="sri-name">${highlightMatch(testName, q)}</span>
+        <span class="sri-sub">${proj.name}</span>
+        <span class="sri-badge badge-proj">Test</span>
+      </div>`;
+      totalResults++;
+    });
+  });
+
+  if (!totalResults) {
+    container.innerHTML = `<div class="search-empty">No tests found for "<strong>${q}</strong>"</div>`;
+  } else {
+    container.innerHTML = html;
+  }
+}
+
+function highlightMatch(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return text;
+  return text.slice(0, idx) + `<mark style="background:rgba(79,142,247,0.3);color:var(--text);border-radius:2px">${text.slice(idx, idx + q.length)}</mark>` + text.slice(idx + q.length);
+}
+
+function handleSearchKey(e) {
+  const items = document.querySelectorAll('#searchResults .search-result-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchHlIdx = Math.min(searchHlIdx + 1, items.length - 1);
+    updateSearchHighlight(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchHlIdx = Math.max(searchHlIdx - 1, 0);
+    updateSearchHighlight(items);
+  } else if (e.key === 'Enter') {
+    if (searchHlIdx >= 0 && items[searchHlIdx]) {
+      const el = items[searchHlIdx];
+      searchSelect(el.dataset.proj, el.dataset.test);
+    } else if (items.length === 1) {
+      const el = items[0];
+      searchSelect(el.dataset.proj, el.dataset.test);
+    }
+  } else if (e.key === 'Escape') {
+    closeSearch();
+  }
+}
+
+function updateSearchHighlight(items) {
+  items.forEach((el, i) => el.classList.toggle('highlighted', i === searchHlIdx));
+  if (items[searchHlIdx]) items[searchHlIdx].scrollIntoView({ block: 'nearest' });
+}
+
+async function searchSelect(projName, testName) {
+  closeSearch();
+
+  // Set project
+  currentProject = projName;
+  const projectSel = document.getElementById('projectSel');
+  projectSel.value = projName;
+  onProjectChange();
+
+  // Wait a tick then set test
+  setTimeout(async () => {
+    const testSel = document.getElementById('testSel');
+    testSel.value = testName;
+    await onTestChange();
+  }, 100);
+}
 
 // ─── STORAGE CLEANUP ──────────────────────────────────
 function openCleanupModal() {
@@ -1395,14 +1592,26 @@ function openDeleteProjectModal() {
     return;
   }
   document.getElementById('delProjName').textContent = `"${currentProject}"`;
+  document.getElementById('delProjPw').value = '';
+  document.getElementById('delProjPwErr').style.display = 'none';
   document.getElementById('delProjModal').classList.add('show');
+  setTimeout(() => document.getElementById('delProjPw').focus(), 80);
 }
 
 function closeDeleteProjectModal() {
   document.getElementById('delProjModal').classList.remove('show');
+  document.getElementById('delProjPw').value = '';
+  document.getElementById('delProjPwErr').style.display = 'none';
 }
 
 async function confirmDeleteProject() {
+  const pw = document.getElementById('delProjPw').value;
+  if (pw !== '1243') {
+    document.getElementById('delProjPwErr').style.display = 'block';
+    document.getElementById('delProjPw').value = '';
+    document.getElementById('delProjPw').focus();
+    return;
+  }
   closeDeleteProjectModal();
   const api = getApiUrl();
   if (!api) { toast('Enter API URL', '#ef4444'); return; }
