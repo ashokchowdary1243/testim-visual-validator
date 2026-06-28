@@ -32,7 +32,8 @@
       "TC_25--Dark home screen",
       "TC_32-1--Uber homw screen",
       "TC_32-2--Grab homw screen",
-      "TC_32--Dark theme uber home screen"
+      "TC_32--Dark theme uber home screen",
+      "TC_32---Dark theme Grab home screen"
     ]
   },
   {
