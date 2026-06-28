@@ -147,23 +147,6 @@ module.exports = async (req, res) => {
     } catch (e) {
       reports = [];
     }
-    if (reports && reports.length > 0) {
-      const lastReport = reports[0]; 
-      const timeDifference = Date.now() - new Date(lastReport.timestamp).getTime();
-      
-      
-      if (lastReport.testName === testName && lastReport.projectName === projectName && !lastReport.pass && timeDifference < 120000) {
-        console.log(`[IGNORE] Testim recheck hit ignored to avoid duplicates for ${testName}`);
-        return res.status(200).json({
-          pass: false,
-          diffPercentage: lastReport.diffPercentage,
-          mismatchedPixels: lastReport.mismatchedPixels,
-          totalPixels: lastReport.totalPixels,
-          reportId: lastReport.id,
-          message: "Ignored duplicate recheck hit. Previous failure already visible."
-        });
-      }
-    }
     // 9. Save report
     const report = {
       id: reportId,
