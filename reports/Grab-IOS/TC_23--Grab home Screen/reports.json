@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_23--Grab home Screen_1782674539335",
+    "testName": "TC_23--Grab home Screen",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T19:22:19.335Z",
+    "pass": false,
+    "diffPercentage": 0.59,
+    "mismatchedPixels": 18541,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_23--Grab home Screen.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_23--Grab home Screen.png",
+    "diffImagePath": "diff-images/Grab-IOS/TC_23--Grab home Screen/TC_23--Grab home Screen_1782674539335.png",
+    "message": "FAIL - 0.59% difference detected!"
+  },
+  {
     "id": "TC_23--Grab home Screen_1782674533183",
     "testName": "TC_23--Grab home Screen",
     "projectName": "Grab-IOS",
