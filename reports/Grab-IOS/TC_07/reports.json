@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_07_1782660507433",
+    "testName": "TC_07",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T15:28:27.431Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 60368,
+    "cropRegion": {
+      "x": 16,
+      "y": 144,
+      "width": 343,
+      "height": 176
+    },
+    "baseImagePath": "base-images/Grab-IOS/TC_07.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_07.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
