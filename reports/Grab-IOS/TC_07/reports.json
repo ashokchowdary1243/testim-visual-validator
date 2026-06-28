@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_07_1782660648943",
+    "testName": "TC_07",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T15:30:48.943Z",
+    "pass": false,
+    "diffPercentage": 47.67,
+    "mismatchedPixels": 28775,
+    "totalPixels": 60368,
+    "cropRegion": {
+      "x": 16,
+      "y": 316,
+      "width": 343,
+      "height": 160
+    },
+    "baseImagePath": "base-images/Grab-IOS/TC_07.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_07.png",
+    "diffImagePath": "diff-images/Grab-IOS/TC_07/TC_07_1782660648943.png",
+    "message": "FAIL - 47.67% difference detected!"
+  },
+  {
     "id": "TC_07_1782660507433",
     "testName": "TC_07",
     "projectName": "Grab-IOS",
