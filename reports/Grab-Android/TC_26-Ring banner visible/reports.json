@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_26-Ring banner visible_1782647831457",
+    "testName": "TC_26-Ring banner visible",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-28T11:57:11.455Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 418320,
+    "cropRegion": {
+      "x": 42,
+      "y": 636,
+      "width": 996,
+      "height": 420
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_26-Ring banner visible.png",
+    "currentImagePath": "current-images/Grab-Android/TC_26-Ring banner visible.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_26-Ring banner visible_1782567195022",
     "testName": "TC_26-Ring banner visible",
     "projectName": "Grab-Android",
