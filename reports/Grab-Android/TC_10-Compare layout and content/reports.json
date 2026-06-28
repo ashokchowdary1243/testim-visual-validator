@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_10-Compare layout and content_1782665733216",
+    "testName": "TC_10-Compare layout and content",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-28T16:55:33.214Z",
+    "pass": true,
+    "diffPercentage": 0.03,
+    "mismatchedPixels": 656,
+    "totalPixels": 2617920,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-Android/TC_10-Compare layout and content.png",
+    "currentImagePath": "current-images/Grab-Android/TC_10-Compare layout and content.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.03% diff)"
+  },
+  {
     "id": "TC_10-Compare layout and content_1782664936861",
     "testName": "TC_10-Compare layout and content",
     "projectName": "Grab-Android",
