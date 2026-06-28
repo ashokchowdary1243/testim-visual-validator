@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_25--Dark home screen_1782681366091",
+    "testName": "TC_25--Dark home screen",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T21:16:06.091Z",
+    "pass": true,
+    "diffPercentage": 1,
+    "mismatchedPixels": 31762,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_25--Dark home screen.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_25--Dark home screen.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (1.00% diff)"
+  },
+  {
     "id": "TC_25--Dark home screen_1782681359791",
     "testName": "TC_25--Dark home screen",
     "projectName": "Grab-IOS",
