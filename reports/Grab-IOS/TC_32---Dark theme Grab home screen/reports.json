@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_32---Dark theme Grab home screen_1782667351571",
+    "testName": "TC_32---Dark theme Grab home screen",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-28T17:22:31.571Z",
+    "pass": true,
+    "diffPercentage": 0.9,
+    "mismatchedPixels": 28333,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_32---Dark theme Grab home screen.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_32---Dark theme Grab home screen.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.90% diff)"
+  },
+  {
     "id": "TC_32---Dark theme Grab home screen_1782663771577",
     "testName": "TC_32---Dark theme Grab home screen",
     "projectName": "Grab-IOS",
