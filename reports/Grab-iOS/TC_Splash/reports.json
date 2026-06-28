@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC_Splash_1782679433791",
+    "testName": "TC_Splash",
+    "projectName": "Grab-iOS",
+    "timestamp": "2026-06-28T20:43:53.791Z",
+    "pass": true,
+    "diffPercentage": 0.01,
+    "mismatchedPixels": 182,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-iOS/TC_Splash.png",
+    "currentImagePath": "current-images/Grab-iOS/TC_Splash.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.01% diff)"
+  }
+]
