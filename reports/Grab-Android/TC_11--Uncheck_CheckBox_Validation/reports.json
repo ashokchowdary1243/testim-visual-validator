@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_11--Uncheck_CheckBox_Validation_1782664956437",
+    "testName": "TC_11--Uncheck_CheckBox_Validation",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-28T16:42:36.437Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 504360,
+    "cropRegion": {
+      "x": 0,
+      "y": 1831,
+      "width": 1080,
+      "height": 467
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_11--Uncheck_CheckBox_Validation.png",
+    "currentImagePath": "current-images/Grab-Android/TC_11--Uncheck_CheckBox_Validation.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_11--Uncheck_CheckBox_Validation_1782545021504",
     "testName": "TC_11--Uncheck_CheckBox_Validation",
     "projectName": "Grab-Android",
