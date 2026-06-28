@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_09-Review all text on consent screen_1782664866450",
+    "testName": "TC_09-Review all text on consent screen",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-28T16:41:06.450Z",
+    "pass": true,
+    "diffPercentage": 0.02,
+    "mismatchedPixels": 640,
+    "totalPixels": 2617920,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-Android/TC_09-Review all text on consent screen.png",
+    "currentImagePath": "current-images/Grab-Android/TC_09-Review all text on consent screen.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.02% diff)"
+  },
+  {
     "id": "TC_09-Review all text on consent screen_1782544931779",
     "testName": "TC_09-Review all text on consent screen",
     "projectName": "Grab-Android",
