@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_45_iFood_1782650148460",
+    "testName": "TC_45_iFood",
+    "projectName": "3P_iFood_iOS",
+    "timestamp": "2026-06-28T12:35:48.460Z",
+    "pass": false,
+    "diffPercentage": 6.59,
+    "mismatchedPixels": 20171,
+    "totalPixels": 306000,
+    "cropRegion": {
+      "x": 48,
+      "y": 396,
+      "width": 1224,
+      "height": 180
+    },
+    "baseImagePath": "base-images/3P_iFood_iOS/TC_45_iFood.png",
+    "currentImagePath": "current-images/3P_iFood_iOS/TC_45_iFood.png",
+    "diffImagePath": "diff-images/3P_iFood_iOS/TC_45_iFood/TC_45_iFood_1782650148460.png",
+    "message": "FAIL - 6.59% difference detected!"
+  },
+  {
     "id": "TC_45_iFood_1782650024297",
     "testName": "TC_45_iFood",
     "projectName": "3P_iFood_iOS",
