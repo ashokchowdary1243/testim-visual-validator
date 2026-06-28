@@ -92,7 +92,8 @@
   {
     "name": "Grab-iOS",
     "testNames": [
-      "TC_Splash--Taking you to Grab"
+      "TC_Splash--Taking you to Grab",
+      "TC_Splash"
     ]
   }
 ]
