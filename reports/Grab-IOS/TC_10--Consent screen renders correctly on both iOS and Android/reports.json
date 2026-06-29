@@ -1,5 +1,20 @@
 [
   {
+    "id": "TC_10--Consent screen renders correctly on both iOS and Android_1782704733257",
+    "testName": "TC_10--Consent screen renders correctly on both iOS and Android",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-29T03:45:33.255Z",
+    "pass": true,
+    "diffPercentage": 0.05,
+    "mismatchedPixels": 1732,
+    "totalPixels": 3162132,
+    "cropRegion": null,
+    "baseImagePath": "base-images/Grab-IOS/TC_10--Consent screen renders correctly on both iOS and Android.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_10--Consent screen renders correctly on both iOS and Android.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.05% diff)"
+  },
+  {
     "id": "TC_10--Consent screen renders correctly on both iOS and Android_1782680929304",
     "testName": "TC_10--Consent screen renders correctly on both iOS and Android",
     "projectName": "Grab-IOS",
