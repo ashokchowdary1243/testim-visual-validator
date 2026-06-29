@@ -97,5 +97,11 @@
       "TC_Splash--Taking you to Grab",
       "TC_Splash"
     ]
+  },
+  {
+    "name": "Offers",
+    "testNames": [
+      "TC_26 location off"
+    ]
   }
 ]
