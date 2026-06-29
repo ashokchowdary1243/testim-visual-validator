@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_07-standard homescreen displayed_1782716906790",
+    "testName": "TC_07-standard homescreen displayed",
+    "projectName": "Grab-Android",
+    "timestamp": "2026-06-29T07:08:26.790Z",
+    "pass": true,
+    "diffPercentage": 0.2,
+    "mismatchedPixels": 2090,
+    "totalPixels": 1058400,
+    "cropRegion": {
+      "x": 0,
+      "y": 0,
+      "width": 1080,
+      "height": 980
+    },
+    "baseImagePath": "base-images/Grab-Android/TC_07-standard homescreen displayed.png",
+    "currentImagePath": "current-images/Grab-Android/TC_07-standard homescreen displayed.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.20% diff)"
+  },
+  {
     "id": "TC_07-standard homescreen displayed_1782567147864",
     "testName": "TC_07-standard homescreen displayed",
     "projectName": "Grab-Android",
