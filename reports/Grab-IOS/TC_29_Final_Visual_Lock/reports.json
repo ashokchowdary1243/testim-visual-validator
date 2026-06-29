@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_29_Final_Visual_Lock_1782748861791",
+    "testName": "TC_29_Final_Visual_Lock",
+    "projectName": "Grab-IOS",
+    "timestamp": "2026-06-29T16:01:01.789Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 6500,
+    "cropRegion": {
+      "x": 230,
+      "y": 320,
+      "width": 130,
+      "height": 50
+    },
+    "baseImagePath": "base-images/Grab-IOS/TC_29_Final_Visual_Lock.png",
+    "currentImagePath": "current-images/Grab-IOS/TC_29_Final_Visual_Lock.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
