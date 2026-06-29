@@ -36,7 +36,8 @@
       "TC_32---Dark theme Grab home screen",
       "TC_34--- Activity page",
       "TC_06",
-      "TC_07"
+      "TC_07",
+      "TC_17---Splash screen shows Grab branding correctly"
     ]
   },
   {
