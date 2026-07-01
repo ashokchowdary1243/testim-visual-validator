@@ -108,5 +108,11 @@
       "TC_26 location off",
       "TC_05-- one highest item with image and another highest item without image"
     ]
+  },
+  {
+    "name": "3P_iFood_iOS_Smoke",
+    "testNames": [
+      "TC_01_iFood_Smoke_2"
+    ]
   }
 ]
