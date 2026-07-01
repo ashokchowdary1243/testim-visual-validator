@@ -113,7 +113,8 @@
     "name": "3P_iFood_iOS_Smoke",
     "testNames": [
       "TC_01_iFood_Smoke_2",
-      "TC_22_iFood_Smoke"
+      "TC_22_iFood_Smoke",
+      "TC_01_iFood_Smoke_1"
     ]
   }
 ]
