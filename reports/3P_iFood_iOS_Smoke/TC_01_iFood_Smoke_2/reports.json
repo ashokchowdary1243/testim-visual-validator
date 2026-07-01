@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_01_iFood_Smoke_2_1782911323075",
+    "testName": "TC_01_iFood_Smoke_2",
+    "projectName": "3P_iFood_iOS_Smoke",
+    "timestamp": "2026-07-01T13:08:43.075Z",
+    "pass": false,
+    "diffPercentage": 2.08,
+    "mismatchedPixels": 4579,
+    "totalPixels": 220320,
+    "cropRegion": {
+      "x": 48,
+      "y": 396,
+      "width": 1224,
+      "height": 180
+    },
+    "baseImagePath": "base-images/3P_iFood_iOS_Smoke/TC_01_iFood_Smoke_2.png",
+    "currentImagePath": "current-images/3P_iFood_iOS_Smoke/TC_01_iFood_Smoke_2.png",
+    "diffImagePath": "diff-images/3P_iFood_iOS_Smoke/TC_01_iFood_Smoke_2/TC_01_iFood_Smoke_2_1782911323075.png",
+    "message": "FAIL - 2.08% difference detected!"
+  },
+  {
     "id": "TC_01_iFood_Smoke_2_1782911317302",
     "testName": "TC_01_iFood_Smoke_2",
     "projectName": "3P_iFood_iOS_Smoke",
