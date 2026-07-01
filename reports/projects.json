@@ -104,7 +104,8 @@
   {
     "name": "Offers",
     "testNames": [
-      "TC_26 location off"
+      "TC_26 location off",
+      "TC_05-- one highest item with image and another highest item without image"
     ]
   }
 ]
