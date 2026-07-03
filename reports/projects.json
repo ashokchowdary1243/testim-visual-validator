@@ -118,5 +118,11 @@
       "TC_19_iFood_Smoke_1",
       "TC_19_iFood_Smoke_2"
     ]
+  },
+  {
+    "name": "Uber-Freight-Android",
+    "testNames": [
+      "TC_Validate_Send_Feedback_Button_Color"
+    ]
   }
 ]
