@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_26 location off_1783089807265",
+    "testName": "TC_26 location off",
+    "projectName": "Offers",
+    "timestamp": "2026-07-03T14:43:27.263Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 532800,
+    "cropRegion": {
+      "x": 48,
+      "y": 606,
+      "width": 1110,
+      "height": 480
+    },
+    "baseImagePath": "base-images/Offers/TC_26 location off.png",
+    "currentImagePath": "current-images/Offers/TC_26 location off.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_26 location off_1783089081686",
     "testName": "TC_26 location off",
     "projectName": "Offers",
