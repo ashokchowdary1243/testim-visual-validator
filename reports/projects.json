@@ -139,7 +139,8 @@
       "TC_Feedback_Screen_Feedback_Chip_MoreLoads",
       "TC_Feedback_Screen_Feedback_Chip_TrackingCalls",
       "TC_Feedback_Screen_Other_Feedback_Question_Text",
-      "TC_Feedback_Screen_Optional_Feedback_Input_Box"
+      "TC_Feedback_Screen_Optional_Feedback_Input_Box",
+      "TC_Feedback_Screen_Send_Feedback_Submit_Button"
     ]
   }
 ]
