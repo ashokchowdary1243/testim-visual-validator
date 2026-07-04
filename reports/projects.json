@@ -137,7 +137,8 @@
       "TC_Feedback_Screen_Feedback_Chip_Detention",
       "TC_Feedback_Screen_Feedback_Chip_SearchOptions",
       "TC_Feedback_Screen_Feedback_Chip_MoreLoads",
-      "TC_Feedback_Screen_Feedback_Chip_TrackingCalls"
+      "TC_Feedback_Screen_Feedback_Chip_TrackingCalls",
+      "TC_Feedback_Screen_Other_Feedback_Question_Text"
     ]
   }
 ]
