@@ -128,7 +128,8 @@
       "TC_Survey_Modal_Star_Rating_Bar_Container",
       "TC_Survey_Modal_Dismiss_Submit_Button",
       "TC_Feedback_Screen_Screen_Title_Header",
-      "TC_Feedback_Screen_Satisfaction_Question_Text"
+      "TC_Feedback_Screen_Satisfaction_Question_Text",
+      "TC_Feedback_Screen_Star_Rating_Bar_Container"
     ]
   }
 ]
