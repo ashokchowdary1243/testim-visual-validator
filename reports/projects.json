@@ -122,7 +122,8 @@
   {
     "name": "Uber-Freight-Android",
     "testNames": [
-      "TC_Validate_Send_Feedback_Button_Color"
+      "TC_Validate_Send_Feedback_Button_Color",
+      "TC_Survey_Modal_Survey_Title_Text"
     ]
   }
 ]
