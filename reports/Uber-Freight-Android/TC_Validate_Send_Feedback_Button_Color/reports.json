@@ -1,5 +1,25 @@
 [
   {
+    "id": "TC_Validate_Send_Feedback_Button_Color_1783143035750",
+    "testName": "TC_Validate_Send_Feedback_Button_Color",
+    "projectName": "Uber-Freight-Android",
+    "timestamp": "2026-07-04T05:30:35.750Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 167328,
+    "cropRegion": {
+      "x": 42,
+      "y": 2088,
+      "width": 996,
+      "height": 168
+    },
+    "baseImagePath": "base-images/Uber-Freight-Android/TC_Validate_Send_Feedback_Button_Color.png",
+    "currentImagePath": "current-images/Uber-Freight-Android/TC_Validate_Send_Feedback_Button_Color.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  },
+  {
     "id": "TC_Validate_Send_Feedback_Button_Color_1783143031109",
     "testName": "TC_Validate_Send_Feedback_Button_Color",
     "projectName": "Uber-Freight-Android",
