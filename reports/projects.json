@@ -131,7 +131,8 @@
       "TC_Feedback_Screen_Satisfaction_Question_Text",
       "TC_Feedback_Screen_Star_Rating_Bar_Container",
       "TC_Feedback_Screen_Improvement_Question_Text",
-      "TC_Feedback_Screen_Feedback_Chip_Rates"
+      "TC_Feedback_Screen_Feedback_Chip_Rates",
+      "TC_Feedback_Screen_Feedback_Chip_Bidding"
     ]
   }
 ]
