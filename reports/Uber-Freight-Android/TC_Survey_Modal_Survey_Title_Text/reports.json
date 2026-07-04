@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_Survey_Modal_Survey_Title_Text_1783144908861",
+    "testName": "TC_Survey_Modal_Survey_Title_Text",
+    "projectName": "Uber-Freight-Android",
+    "timestamp": "2026-07-04T06:01:48.861Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 159360,
+    "cropRegion": {
+      "x": 42,
+      "y": 1340,
+      "width": 996,
+      "height": 160
+    },
+    "baseImagePath": "base-images/Uber-Freight-Android/TC_Survey_Modal_Survey_Title_Text.png",
+    "currentImagePath": "current-images/Uber-Freight-Android/TC_Survey_Modal_Survey_Title_Text.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
