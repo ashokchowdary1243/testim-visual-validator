@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_Survey_Modal_Dismiss_Submit_Button_1783144920930",
+    "testName": "TC_Survey_Modal_Dismiss_Submit_Button",
+    "projectName": "Uber-Freight-Android",
+    "timestamp": "2026-07-04T06:02:00.930Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 146412,
+    "cropRegion": {
+      "x": 42,
+      "y": 2078,
+      "width": 996,
+      "height": 147
+    },
+    "baseImagePath": "base-images/Uber-Freight-Android/TC_Survey_Modal_Dismiss_Submit_Button.png",
+    "currentImagePath": "current-images/Uber-Freight-Android/TC_Survey_Modal_Dismiss_Submit_Button.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
