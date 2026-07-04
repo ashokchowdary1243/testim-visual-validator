@@ -134,7 +134,8 @@
       "TC_Feedback_Screen_Feedback_Chip_Rates",
       "TC_Feedback_Screen_Feedback_Chip_Bidding",
       "TC_Feedback_Screen_Feedback_Chip_Support",
-      "TC_Feedback_Screen_Feedback_Chip_Detention"
+      "TC_Feedback_Screen_Feedback_Chip_Detention",
+      "TC_Feedback_Screen_Feedback_Chip_SearchOptions"
     ]
   }
 ]
