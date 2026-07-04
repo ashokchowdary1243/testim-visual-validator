@@ -126,7 +126,8 @@
       "TC_Survey_Modal_Survey_Title_Text",
       "TC_Survey_Modal_Survey_Subtitle_Description",
       "TC_Survey_Modal_Star_Rating_Bar_Container",
-      "TC_Survey_Modal_Dismiss_Submit_Button"
+      "TC_Survey_Modal_Dismiss_Submit_Button",
+      "TC_Feedback_Screen_Screen_Title_Header"
     ]
   }
 ]
