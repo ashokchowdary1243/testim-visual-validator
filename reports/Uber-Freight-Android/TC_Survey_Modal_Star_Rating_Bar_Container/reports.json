@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TC_Survey_Modal_Star_Rating_Bar_Container_1783144917263",
+    "testName": "TC_Survey_Modal_Star_Rating_Bar_Container",
+    "projectName": "Uber-Freight-Android",
+    "timestamp": "2026-07-04T06:01:57.263Z",
+    "pass": true,
+    "diffPercentage": 0,
+    "mismatchedPixels": 0,
+    "totalPixels": 94500,
+    "cropRegion": {
+      "x": 225,
+      "y": 1844,
+      "width": 630,
+      "height": 150
+    },
+    "baseImagePath": "base-images/Uber-Freight-Android/TC_Survey_Modal_Star_Rating_Bar_Container.png",
+    "currentImagePath": "current-images/Uber-Freight-Android/TC_Survey_Modal_Star_Rating_Bar_Container.png",
+    "diffImagePath": null,
+    "message": "PASS - Images match! (0.00% diff)"
+  }
+]
