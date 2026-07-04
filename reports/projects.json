@@ -124,7 +124,8 @@
     "testNames": [
       "TC_Validate_Send_Feedback_Button_Color",
       "TC_Survey_Modal_Survey_Title_Text",
-      "TC_Survey_Modal_Survey_Subtitle_Description"
+      "TC_Survey_Modal_Survey_Subtitle_Description",
+      "TC_Survey_Modal_Star_Rating_Bar_Container"
     ]
   }
 ]
